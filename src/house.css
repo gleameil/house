@@ -1,0 +1,273 @@
+/* house.css — parchment & warm dark brown, per the February design system */
+
+:root {
+  --parchment: rgb(245, 236, 217);
+  --warm-black: rgb(58, 43, 30);
+  --faded-ink: rgba(58, 43, 30, 0.55);
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--warm-black);
+  font-family: 'EB Garamond', Georgia, serif;
+  overflow: hidden;
+}
+
+#house-room {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  /* deliberately NOT cursor:pointer anywhere — a hover tell is a hint
+     system, and hint systems should be designed, not leaked */
+  cursor: default;
+  user-select: none;
+}
+
+.room-background {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.hidden-object {
+  position: absolute;
+  pointer-events: none; /* the container listener does all the work */
+  transition:
+    opacity 0.9s ease,
+    filter 0.9s ease;
+}
+
+.hidden-object.being-found {
+  opacity: 0;
+  filter: brightness(2) blur(2px);
+}
+
+.hidden-object.is-found {
+  display: none;
+}
+
+/* ------------------------------------------------------------- to-find -- */
+
+#to-find {
+  position: fixed;
+  top: 0;
+  right: 0;
+  max-width: 15rem;
+  margin: 1rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--parchment);
+  color: var(--warm-black);
+  border: 1px solid var(--warm-black);
+  box-shadow: 0.2rem 0.2rem 0 rgba(58, 43, 30, 0.35);
+}
+
+#to-find h1 {
+  font-size: 1.1rem;
+  font-weight: normal;
+  font-style: italic;
+  margin: 0 0 0.5rem;
+  border-bottom: 1px solid var(--faded-ink);
+  padding-bottom: 0.35rem;
+}
+
+#to-find ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+#to-find li.found {
+  text-decoration: line-through;
+  color: var(--faded-ink);
+}
+
+#paper-ball-count {
+  margin-top: 0.35rem;
+  padding-top: 0.35rem;
+  border-top: 1px dashed var(--faded-ink);
+  font-style: italic;
+}
+
+#all-found {
+  display: none;
+  margin-top: 0.6rem;
+  font-style: italic;
+  text-align: center;
+}
+
+#all-found.visible {
+  display: block;
+  animation: settle-in 1.4s ease both;
+}
+
+@keyframes settle-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.3rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* ---------------------------------------------------------- miss ripple -- */
+
+.miss-ripple {
+  position: fixed;
+  width: 2rem;
+  height: 2rem;
+  margin: -1rem 0 0 -1rem;
+  border: 1px solid rgba(245, 236, 217, 0.8);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: dust 0.5s ease-out both;
+}
+
+@keyframes dust {
+  from {
+    opacity: 0.8;
+    transform: scale(0.3);
+  }
+  to {
+    opacity: 0;
+    transform: scale(1.1);
+  }
+}
+
+@media (max-width: 40rem) {
+  #to-find {
+    max-width: none;
+    left: 0;
+    font-size: 0.85rem;
+  }
+}
+
+/* -------------------------------------------------------------- fusion -- */
+
+#fusion-overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.2rem;
+  background: rgba(30, 21, 14, 0);
+  transition: background 0.6s ease, opacity 0.5s ease;
+  z-index: 10;
+}
+
+#fusion-overlay.visible {
+  background: rgba(30, 21, 14, 0.82);
+}
+
+#fusion-stage {
+  position: relative;
+}
+
+.fusion-piece {
+  position: absolute;
+  transition:
+    transform 0.65s cubic-bezier(0.3, 0, 0.55, 1.15),
+    opacity 0.45s ease;
+}
+
+.fusion-head.seating {
+  animation: seat 0.4s ease both;
+}
+
+/* the squeeze: how you get a doll's head back on */
+@keyframes seat {
+  0% {
+    scale: 1 1;
+  }
+  45% {
+    scale: 1.17 0.82;
+  }
+  75% {
+    scale: 0.95 1.06;
+  }
+  100% {
+    scale: 1 1;
+  }
+}
+
+#fusion-whole {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+}
+
+#fusion-overlay.fused .fusion-piece {
+  opacity: 0;
+}
+
+#fusion-overlay.fused #fusion-whole {
+  opacity: 1;
+}
+
+#fusion-glow {
+  position: absolute;
+  inset: -12%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(245, 236, 217, 0.5) 0%,
+    rgba(245, 236, 217, 0) 65%
+  );
+  opacity: 0;
+}
+
+#fusion-glow.pulse {
+  animation: glow-pulse 1.6s ease both;
+}
+
+@keyframes glow-pulse {
+  0% {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  35% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.15);
+  }
+}
+
+#fusion-caption {
+  font-family: 'EB Garamond', Georgia, serif;
+  font-style: italic;
+  font-size: 1.25rem;
+  color: var(--parchment);
+  opacity: 0;
+  transform: translateY(0.4rem);
+  transition: opacity 0.9s ease, transform 0.9s ease;
+}
+
+#fusion-caption.visible {
+  opacity: 1;
+  transform: none;
+}
+
+.restored-doll {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  filter: brightness(1.6);
+  transition: opacity 1.2s ease, filter 1.6s ease;
+}
+
+.restored-doll.standing {
+  opacity: 1;
+  filter: brightness(1);
+}

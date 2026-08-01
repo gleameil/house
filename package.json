@@ -1,0 +1,17 @@
+{
+  "name": "house",
+  "version": "0.1.0",
+  "private": true,
+  "description": "the Abandoned House — hidden object environment for Digital February",
+  "scripts": {
+    "start": "parcel index.html -p 5678",
+    "build": "parcel build index.html --public-url ./"
+  },
+  "devDependencies": {
+    "parcel": "^2.12.0",
+    "typescript": "^5.9.3"
+  },
+  "dependencies": {
+    "esbuild": "^0.28.1"
+  }
+}

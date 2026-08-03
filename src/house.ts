@@ -15,7 +15,13 @@
 import './house.css';
 import {
   ALPHA_THRESHOLD,
-  BEDROOM,
+  CHILDRENS_BEDROOM,
+  MASTER_BATHROOM,
+  BROOM_CLOSET,
+  SPARE_ROOM,
+  BALCONY,
+  LADY_BATHROOM,
+  MASTER_BEDROOM,
   FusionSpec,
   HiddenObjectSpec,
   RoomSpec,
@@ -171,7 +177,7 @@ function updateList(): void {
       li.classList.remove('found');
     }
   }
-  const balls = state.objects.filter((o) => o.spec.kind === 'paperBall');
+  const balls = state.objects.filter((o) => o.spec.kind === 'scrawl');
   const counter = document.getElementById('paper-ball-count');
   if (counter && balls.length > 0) {
     const found = balls.filter((b) => b.found).length;
@@ -397,5 +403,5 @@ export async function enterRoom(room: RoomSpec): Promise<void> {
   container.addEventListener('click', onRoomClick);
   updateList();
 }
-
-enterRoom(BEDROOM);
+// Choices at present: CHILDRENS_BEDROOM, MASTER_BATHROOM, BROOM_CLOSET, SPARE_ROOM, BALCONY, LADY_BATHROOM, MASTER_BEDROOM
+enterRoom(MASTER_BATHROOM);

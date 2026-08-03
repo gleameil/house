@@ -687,6 +687,15 @@ export const MASTER_BATHROOM: RoomSpec = {
         { x: 0.124, y: 0.75, width: 0.118 }, 
       ]
     },
+    {
+      id: 'guy-head',
+      name: "the guy doll's head",
+      kind: 'named',
+      image: guyHead,
+      spots: [
+        { x: 0.64, y: 0.7, width: 0.115 },
+      ]
+    }
   ], // named: toilet paper tube, soap, toothpaste, toothbrush, razor, cockroach, mirror, Ken, breath mint?, deodorant (brand: Sansfoy), towel, loofah, underwear (men's), toilet brush, spary cleaner, underwear (women's), locket?, mop, tapestry-equivalent, barbell, gauntlet, lighter
   fusions: [],
 };

@@ -19,6 +19,7 @@ import roomBalcony from 'url:../assets/room-balcony.jpg';
 import roomBedroom from 'url:../assets/room-bedroom.jpg';
 import backpack from 'url:../assets/backpack.png';
 import balletShoes from 'url:../assets/balletshoes.png';
+import barbells from 'url:../assets/barbells.png';
 import block from 'url:../assets/block.png';
 import boardBook from 'url:../assets/boardbook.png';
 import brokenWand from 'url:../assets/brokenwand.png';
@@ -158,7 +159,7 @@ export interface RoomSpec {
 /** Alpha threshold (0–255) above which a pixel counts as clickable. */
 export const ALPHA_THRESHOLD = 10;
 
-export const CHILDRENS_BEDROOM: RoomSpec = {
+const CHILDRENS_BEDROOM: RoomSpec = {
   id: 'bedroom',
   name: "the children's room",
   background: roomBedroom,
@@ -498,7 +499,7 @@ export const CHILDRENS_BEDROOM: RoomSpec = {
     },
   ],
 };
-export const MASTER_BATHROOM: RoomSpec = {
+const MASTER_BATHROOM: RoomSpec = {
   id: 'master-bathroom',
   name: "the master bathroom",
   background: roomMasterBathroom,
@@ -513,6 +514,13 @@ export const MASTER_BATHROOM: RoomSpec = {
         { x: 0.16, y: 0.22, width: 0.05 },
         { x: 0.61, y: 0.28, width: 0.08 },
       ]
+    },
+    {
+      id: 'barbells',
+      name: 'the barbells',
+      kind: 'named',
+      image: barbells,
+      spots: [],
     },
     {
       id: 'boxers',
@@ -699,15 +707,15 @@ export const MASTER_BATHROOM: RoomSpec = {
   ], // named: toilet paper tube, soap, toothpaste, toothbrush, razor, cockroach, mirror, Ken, breath mint?, deodorant (brand: Sansfoy), towel, loofah, underwear (men's), toilet brush, spary cleaner, underwear (women's), locket?, mop, tapestry-equivalent, barbell, gauntlet, lighter
   fusions: [],
 };
-export const BROOM_CLOSET: RoomSpec = {
+const BROOM_CLOSET: RoomSpec = {
   id: 'broom-closet',
   name: 'the broom closet',
   background: roomBroomCloset,
   aspectRatio: 1920 / 1080,
-  objects: [],
+  objects: [], // paper towels, toilet paper, plunger, sponge, mop, rag, bug, spider, cleaner in spray bottle, Seraphina (top shelf), vacuum, note to self
   fusions: [],
 };
-export const SPARE_ROOM: RoomSpec = {
+const SPARE_ROOM: RoomSpec = {
   id: 'spare-room',
   name: 'the spare room',
   background: roomSpare,
@@ -715,7 +723,7 @@ export const SPARE_ROOM: RoomSpec = {
   objects: [],
   fusions: []
 };
-export const BALCONY: RoomSpec = {
+const BALCONY: RoomSpec = {
   id: 'balcony',
   name: 'the balcony',
   background: roomBalcony,
@@ -723,7 +731,7 @@ export const BALCONY: RoomSpec = {
   objects: [],
   fusions: []
 };
-export const LADY_BATHROOM: RoomSpec = {
+const LADY_BATHROOM: RoomSpec = {
   id: 'lady-bathroom',
   name: "a Lady's bathroom",
   background: roomLadyBathroom,
@@ -731,7 +739,7 @@ export const LADY_BATHROOM: RoomSpec = {
   objects: [],
   fusions: []
 };
-export const MASTER_BEDROOM: RoomSpec = {
+const MASTER_BEDROOM: RoomSpec = {
   id: 'master-bedroom',
   name: 'the master bedroom',
   background: roomMasterBedroom,
@@ -739,5 +747,7 @@ export const MASTER_BEDROOM: RoomSpec = {
   objects: [],
   fusions: []
 };
+
+export const ROOMS = [CHILDRENS_BEDROOM, MASTER_BATHROOM];
 
 

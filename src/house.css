@@ -23,6 +23,7 @@ body {
      system, and hint systems should be designed, not leaked */
   cursor: default;
   user-select: none;
+  overflow: hidden;
 }
 
 .room-background {

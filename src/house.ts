@@ -15,13 +15,7 @@
 import './house.css';
 import {
   ALPHA_THRESHOLD,
-  CHILDRENS_BEDROOM,
-  MASTER_BATHROOM,
-  BROOM_CLOSET,
-  SPARE_ROOM,
-  BALCONY,
-  LADY_BATHROOM,
-  MASTER_BEDROOM,
+  ROOMS,
   FusionSpec,
   HiddenObjectSpec,
   RoomSpec,
@@ -187,6 +181,7 @@ function updateList(): void {
   if (allFound()) {
     const banner = document.getElementById('all-found');
     if (banner) banner.classList.add('visible');
+    enterRoom(ROOMS[(ROOMS.indexOf(state.room ?? ROOMS[ROOMS.length - 1]) + 1) % ROOMS.length])
   }
 }
 
@@ -357,6 +352,11 @@ function buildList(room: RoomSpec): HTMLElement {
 }
 
 export async function enterRoom(room: RoomSpec): Promise<void> {
+  let current = document.getElementsByClassName('house');
+  while (current.length > 0) {
+    current[0].remove();
+  }
+  console.log('what')
   state.room = room;
   const container = document.createElement('div');
   container.className = 'house';
@@ -404,4 +404,4 @@ export async function enterRoom(room: RoomSpec): Promise<void> {
   updateList();
 }
 // Choices at present: CHILDRENS_BEDROOM, MASTER_BATHROOM, BROOM_CLOSET, SPARE_ROOM, BALCONY, LADY_BATHROOM, MASTER_BEDROOM
-enterRoom(MASTER_BATHROOM);
+enterRoom(ROOMS[0]);

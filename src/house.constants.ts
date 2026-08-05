@@ -8,6 +8,30 @@ import heart from 'url:../assets/heart.png';
 
 // broom closet
 import roomBroomCloset from 'url:../assets/room-broom-closet.jpg';
+import antifreeze from 'url:../assets/antifreeze.png';
+import bottle from 'url:../assets/bottle.png';
+import electricalCord from 'url:../assets/electrical-cord.png';
+import energyDrinkEmpty from 'url:../assets/energy-drink-empty.png';
+import energyDrink from 'url:../assets/energy-drink.png';
+import handVacuum from 'url:../assets/hand-vacuum.png';
+import hornet from 'url:../assets/hornet.png';
+import list from 'url:../assets/list.png';
+import matches from 'url:../assets/matches.png';
+import nail from 'url:../assets/nail.png';
+import paperTowels from 'url:../assets/paper-towels.png';
+import pen from 'url:../assets/pen.png';
+import pliers from 'url:../assets/pliers.png';
+import plunger from 'url:../assets/plunger.png';
+import poison from 'url:../assets/poison.png';
+import rag from 'url:../assets/rag.png';
+import razorBlade from 'url:../assets/razor-blade.png';
+import screwdriver from 'url:../assets/screwdriver.png';
+import spider from 'url:../assets/spider.png';
+import sponge from 'url:../assets/sponge.png';
+import sprayBottle from 'url:../assets/spray-bottle.png';
+import toiletPaper from 'url:../assets/toiletPaper.png';
+import gorrilaLeg from 'url:../assets/gorilla-leg.png';
+import evilHead from 'url:../assets/evil-head.png';
 
 // spare room
 import roomSpare from 'url:../assets/room-spare.jpg';
@@ -50,13 +74,6 @@ import evilBody from 'url:../assets/evil-body.png';
 import plusSizeBody from 'url:../assets/plus-size-body.png';
 import guyBody from 'url:../assets/guy-body.png';
 
-
-// master bedroom
-import roomMasterBedroom from 'url:../assets/room-master-bedroom.jpg';
-import album from 'url:../assets/album.png';
-import envelope from 'url:../assets/envelope.png';
-import locket from 'url:../assets/locket.png';
-
 // master bathroom
 import roomMasterBathroom from 'url:../assets/room-bathroom.jpg';
 import airFreshener from 'url:../assets/air-freshener.png';
@@ -67,6 +84,7 @@ import deodorant from 'url:../assets/deodorant.png';
 import gauntlet from 'url:../assets/gauntlet.png';
 import knightHelmet from 'url:../assets/knight-helmet.png';
 import lighter from 'url:../assets/lighter.png';
+import locket from 'url:../assets/locket.png';
 import loofah from 'url:../assets/loofah.png';
 import lozenge from 'url:../assets/lozenge.png';
 import lozenge2 from 'url:../assets/lozenge2.png';
@@ -78,6 +96,7 @@ import toothpaste from 'url:../assets/toothpaste.png';
 import towel from 'url:../assets/towel.png';
 import undies from 'url:../assets/undies.png';
 import guyHead from 'url:../assets/guy-head.png';
+import plusSizeHead from 'url:../assets/plus-size-head.png';
 
 // lady bathroom
 import roomLadyBathroom from 'url:../assets/room-lady-bathroom.jpg';
@@ -498,7 +517,7 @@ const CHILDRENS_BEDROOM: RoomSpec = {
       restoredSpot: { x: 0.328, y: 0.63, width: 0.048 },
     },
   ],
-};
+}; // doll bodies, ragged doll head
 const MASTER_BATHROOM: RoomSpec = {
   id: 'master-bathroom',
   name: "the master bathroom",
@@ -520,7 +539,10 @@ const MASTER_BATHROOM: RoomSpec = {
       name: 'the barbells',
       kind: 'named',
       image: barbells,
-      spots: [],
+      spots: [
+        { x: 0.15, y: 0.7, width: 0.2, rotation: -60 },
+        { x: 0.55, y: 0.8, width: 0.22, rotation: -96 }
+      ],
     },
     {
       id: 'boxers',
@@ -528,7 +550,7 @@ const MASTER_BATHROOM: RoomSpec = {
       kind: 'named',
       image: boxers,
       spots: [
-        { x: 0.5, y: 0.82, width: 0.3 },
+        { x: 0.5, y: 0.82, width: 0.2 },
         { x: 0.12, y: 0.26, width: 0.12 },
       ]
     },
@@ -651,7 +673,7 @@ const MASTER_BATHROOM: RoomSpec = {
       kind: 'named',
       image: toiletBrush,
       spots: [
-        { x: 0.2, y: 0.16, width: 0.06, rotation: -20 }
+        { x: 0.1, y: 0.16, width: 0.06, rotation: -40 }
       ]
     },
     {
@@ -690,9 +712,9 @@ const MASTER_BATHROOM: RoomSpec = {
       kind: 'named',
       image: undies,
       spots: [
-        { x: 0.39, y: 0.57, width: 0.1 },
-        { x: 0.34, y: 0.7, width: 0.115 },
-        { x: 0.124, y: 0.75, width: 0.118 }, 
+        { x: 0.39, y: 0.57, width: 0.09 },
+        { x: 0.34, y: 0.7, width: 0.105 },
+        { x: 0.124, y: 0.75, width: 0.108 }, 
       ]
     },
     {
@@ -706,23 +728,23 @@ const MASTER_BATHROOM: RoomSpec = {
     }
   ], // named: toilet paper tube, soap, toothpaste, toothbrush, razor, cockroach, mirror, Ken, breath mint?, deodorant (brand: Sansfoy), towel, loofah, underwear (men's), toilet brush, spary cleaner, underwear (women's), locket?, mop, tapestry-equivalent, barbell, gauntlet, lighter
   fusions: [],
-};
+}; // almonds, guy doll head, plus size doll head
 const BROOM_CLOSET: RoomSpec = {
   id: 'broom-closet',
   name: 'the broom closet',
   background: roomBroomCloset,
   aspectRatio: 1920 / 1080,
-  objects: [], // paper towels, toilet paper, plunger, sponge, mop, rag, bug, spider, cleaner in spray bottle, Seraphina (top shelf), vacuum, note to self
+  objects: [], // paper towels, toilet paper, plunger, sponge, mop, rag, bug, spider, cleaner in spray bottle,  vacuum, note to self, matches, extension cord, screw, nail, can (intact), can (crushed)
   fusions: [],
-};
+}; // keys, gorilla leg, evil doll head
 const SPARE_ROOM: RoomSpec = {
   id: 'spare-room',
   name: 'the spare room',
   background: roomSpare,
   aspectRatio: 1920 / 1080,
-  objects: [],
+  objects: [], // laptop, pen, box, coat, garbage, joker, ashtray, paperclips, cigarette, 
   fusions: []
-};
+}; // scrawls, christy doll head, Seraphina
 const BALCONY: RoomSpec = {
   id: 'balcony',
   name: 'the balcony',
@@ -730,23 +752,7 @@ const BALCONY: RoomSpec = {
   aspectRatio: 1920 / 1080,
   objects: [],
   fusions: []
-};
-const LADY_BATHROOM: RoomSpec = {
-  id: 'lady-bathroom',
-  name: "a Lady's bathroom",
-  background: roomLadyBathroom,
-  aspectRatio: 1920 / 1080,
-  objects: [],
-  fusions: []
-};
-const MASTER_BEDROOM: RoomSpec = {
-  id: 'master-bedroom',
-  name: 'the master bedroom',
-  background: roomMasterBedroom,
-  aspectRatio: 1920 / 1080,
-  objects: [],
-  fusions: []
-};
+}; // scribbles, Doris doll
 
 export const ROOMS = [CHILDRENS_BEDROOM, MASTER_BATHROOM];
 

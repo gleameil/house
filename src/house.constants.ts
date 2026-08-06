@@ -29,7 +29,7 @@ import screwdriver from 'url:../assets/screwdriver.png';
 import spider from 'url:../assets/spider.png';
 import sponge from 'url:../assets/sponge.png';
 import sprayBottle from 'url:../assets/spray-bottle.png';
-import toiletPaper from 'url:../assets/toiletPaper.png';
+import toiletPaper from 'url:../assets/toilet-paper.png';
 import gorrilaLeg from 'url:../assets/gorilla-leg.png';
 import evilHead from 'url:../assets/evil-head.png';
 
@@ -677,6 +677,15 @@ const MASTER_BATHROOM: RoomSpec = {
       ]
     },
     {
+      id: 'toilet-paper',
+      name: 'the toilet paper',
+      kind: 'named',
+      image: toiletPaper,
+      spots: [
+        { x: 0.1, y:0.68, width: 0.1 },
+      ],
+    },
+    {
       id: 'toothbrush',
       name: 'the toothbrush',
       kind: 'named',
@@ -725,18 +734,246 @@ const MASTER_BATHROOM: RoomSpec = {
       spots: [
         { x: 0.64, y: 0.7, width: 0.115 },
       ]
+    },
+    {
+      id: 'evil-head',
+      name: "the evil doll's head",
+      kind: 'named',
+      image: evilHead,
+      spots: [
+        { x: 0.2, y: 0.99, width: 0.07, rotation: 48 }
+      ]
     }
   ], // named: toilet paper tube, soap, toothpaste, toothbrush, razor, cockroach, mirror, Ken, breath mint?, deodorant (brand: Sansfoy), towel, loofah, underwear (men's), toilet brush, spary cleaner, underwear (women's), locket?, mop, tapestry-equivalent, barbell, gauntlet, lighter
   fusions: [],
-}; // almonds, guy doll head, plus size doll head
+}; // almonds, guy doll head, evil doll head
 const BROOM_CLOSET: RoomSpec = {
   id: 'broom-closet',
   name: 'the broom closet',
   background: roomBroomCloset,
   aspectRatio: 1920 / 1080,
-  objects: [], // paper towels, toilet paper, plunger, sponge, mop, rag, bug, spider, cleaner in spray bottle,  vacuum, note to self, matches, extension cord, screw, nail, can (intact), can (crushed)
+  objects: [
+    {
+      id: 'antifreeze',
+      name: 'the antifreeze',
+      kind: 'named',
+      image: antifreeze,
+      spots: [
+        { x: 0.4, y: 0.08, width: 0.06},
+        { x: 0.54, y: 0.98, width: 0.06},
+      ]
+    },
+    {
+      id: 'electrical-cord',
+      name: 'the electrical cord',
+      kind: 'named',
+      image: electricalCord,
+      spots: [
+        {x: 0.5, y: 0.4, width: 0.14},
+        {x: 0.5, y: 0.97, width: 0.14, rotation: -90}
+      ]
+    },
+    {
+      id: 'energy-drink',
+      name: 'the energy drink',
+      kind: 'named',
+      image: energyDrink,
+      spots: [
+        {x: 0.58, y: 0.1, width: 0.034},
+        {x: 0.374, y: 0.99, width: 0.034, rotation: -40}
+      ]
+    },
+    {
+      id: 'energy-drink-empty',
+      name: 'the empty can',
+      kind: 'named',
+      image: energyDrinkEmpty,
+      spots: [
+        {x: 0.365, y: 0.86, width: 0.035,},
+        { x: 0.6, y: 0.12, width: 0.035}
+      ]
+    },
+    {
+      id: 'hand-vacuum',
+      name: 'the hand vacuum',
+      kind: 'named',
+      image: handVacuum,
+      spots: [
+        { x: 0.435, y: 0.4, width: 0.1, rotation: -90 },
+        { x: 0.62, y: 0.95, width: 0.1, rotation: 97 }
+      ]
+    },
+    {
+      id: 'wasp',
+      name: 'the wasp',
+      kind: 'named',
+      image: hornet,
+      spots: [
+        { x: 0.78, y: 0.37, width: 0.06 },
+        { x: 0.12, y: 0.17, width: 0.06 },
+        { x: 0.58, y: 0.87, width: 0.06 },
+      ]
+    },
+    {
+      id: 'list',
+      name: 'the grocery list',
+      kind: 'named',
+      image: list,
+      spots: [
+        { x: 0.26, y: 0.28, width: 0.05 },
+        { x: 0.435, y: 0.24, width: 0.05 },
+      ]
+    },
+    {
+      id: 'matches',
+      name: 'the matches',
+      kind: 'named',
+      image: matches,
+      spots: [
+        { x: 0.45, y: 0.107, width: 0.04 },
+        { x: 0.41, y: 0.85, width: 0.04 }
+      ]
+    },
+    {
+      id: 'nail',
+      name: 'the nail',
+      kind: 'named',
+      image: nail,
+      spots: [
+        { x: 0.37, y: 0.4, width: 0.02, rotation: -100 },
+        { x: 0.61, y: 0.5, width: 0.02, rotation: 100 }
+      ]
+    },
+    {
+      id: 'paper-towels',
+      name: 'the paper towels',
+      kind: 'named',
+      image: paperTowels,
+      spots: [
+        { x: 0.11, y: 0.95, width: 0.08 },
+        { x: 0.273, y: 0.95, width: 0.08 }
+      ]
+    },
+    {
+      id: 'pen',
+      name: 'the pen',
+      kind: 'named',
+      image: pen,
+      spots: [
+        { x: 0.58, y: 0.08, width: 0.06}
+      ]
+    },
+    {
+      id: 'pliers',
+      name: 'the pliers',
+      kind: 'named',
+      image: pliers,
+      spots: [
+        { x: 0.43, y: 0.69, width: 0.06, rotation: -90 },
+        { x: 0.5, y: 0.11, width: 0.06 }
+      ],
+    },
+    {
+      id: 'plunger',
+      name: 'the plunger',
+      kind: 'named',
+      image: plunger,
+      spots: [
+        { x: 0.8, y: 0.9, width: 0.08, }
+      ],
+    },
+    {
+      id: 'poison',
+      name: 'the wasp poison',
+      kind: 'named',
+      image: poison,
+      spots: [
+        { x: 0.54, y: 0.08, width: 0.032 },
+        { x: 0.57, y: 0.99, width: 0.033 }
+      ]
+    },
+    {
+      id: 'rag',
+      name: 'the rag',
+      kind: 'named',
+      image: rag,
+      spots: [
+        { x: 0.4, y: 0.98, width: 0.08 },
+        { x: 0.52, y: 0.43, width: 0.08 }
+      ]
+    },
+    {
+      id: 'razor-blade',
+      name: 'the razor blade',
+      kind: 'named',
+      image: razorBlade,
+      spots: [
+        { x: 0.55, y: 0.132, width: 0.03 }
+      ]
+    },
+    {
+      id: 'screwdriver',
+      name: 'the screwdriver',
+      kind: 'named',
+      image: screwdriver,
+      spots: [
+        { x: 0.59, y: 0.27, width: 0.017 }
+      ]
+    },
+    {
+      id: 'spider',
+      name: 'the spider',
+      kind: 'named',
+      image: spider,
+      spots: [
+        { x: 0.13, y: 0.45, width: 0.02 },
+        { x: 0.04, y: 0.1, width: 0.02 },
+        { x: 0.23, y: 0.84, width: 0.02 },
+        { x: 0.56, y: 0.45, width: 0.02, rotation: -35 },
+        { x: 0.62, y: 0.6, width: 0.02, },
+        { x: 0.38, y: 0.83, width: 0.02 },
+      ]
+    },
+    {
+      id: 'sponge',
+      name: 'the sponge',
+      kind: 'named',
+      image: sponge,
+      spots: [ { x: 0.445, y: 0.984, width: 0.06 }]
+    },
+    {
+      id: 'spray-bottle',
+      name: 'the spray cleaner',
+      kind: 'named',
+      image: sprayBottle,
+      spots: [ 
+        {x: 0.59, y: 0.98, width: 0.034},
+        {x: 0.34, y: 0.98, width: 0.034},
+        {x: 0.5, y: 0.122, width: 0.034, rotation: 100}
+      ]
+    },
+    {
+      id: 'gorilla-leg',
+      name: "the gorilla figure's leg",
+      kind: 'named',
+      image: gorrilaLeg,
+      spots: [
+        { x: 0.58, y: 0.11, width: 0.08 }
+      ]
+    },
+    {
+      id: 'plus-size-head',
+      name: "the plus-sized doll's head",
+      kind: 'named',
+      image: plusSizeHead,
+      spots: [
+        { x: 0.5, y: 0.11, width: 0.04, rotation: 90 },
+        { x: 0.33, y: 0.986, width: 0.04 }
+      ]
+    }
+  ], // paper towels, toilet paper, plunger, sponge, mop, rag, bug, spider, cleaner in spray bottle,  vacuum, note to self, matches, extension cord, screw, nail, can (intact), can (crushed)
   fusions: [],
-}; // keys, gorilla leg, evil doll head
+}; // keys, gorilla leg, plus size doll head
 const SPARE_ROOM: RoomSpec = {
   id: 'spare-room',
   name: 'the spare room',
@@ -754,6 +991,6 @@ const BALCONY: RoomSpec = {
   fusions: []
 }; // scribbles, Doris doll
 
-export const ROOMS = [CHILDRENS_BEDROOM, MASTER_BATHROOM];
+export const ROOMS = [CHILDRENS_BEDROOM, BROOM_CLOSET, MASTER_BATHROOM];
 
 

@@ -9,7 +9,6 @@ import heart from 'url:../assets/heart.png';
 // broom closet
 import roomBroomCloset from 'url:../assets/room-broom-closet.jpg';
 import antifreeze from 'url:../assets/antifreeze.png';
-import bottle from 'url:../assets/bottle.png';
 import electricalCord from 'url:../assets/electrical-cord.png';
 import energyDrinkEmpty from 'url:../assets/energy-drink-empty.png';
 import energyDrink from 'url:../assets/energy-drink.png';
@@ -35,6 +34,28 @@ import evilHead from 'url:../assets/evil-head.png';
 
 // spare room
 import roomSpare from 'url:../assets/room-spare.jpg';
+import almondJar from 'url:../assets/almond-jar.png';
+import almondLid from 'url:../assets/almond-lid.png';
+import bottle from 'url:../assets/bottle.png';
+import bowl from 'url:../assets/bowl.png';
+import brokenPencil from 'url:../assets/broken-pencil.png';
+import cardDeck from 'url:../assets/card-deck.png';
+import cigarette from 'url:../assets/cigarette.png';
+import crucifix from 'url:../assets/crucifix.png';
+import ashtray from 'url:../assets/dish.png';
+import fork from 'url:../assets/fork.png';
+import glass from 'url:../assets/glass.png';
+import hanger from 'url:../assets/hanger.png';
+import joker from 'url:../assets/joker.png';
+import lightbulb from 'url:../assets/lightbulb.png';
+import magazine from 'url:../assets/magazine.png';
+import notebook from 'url:../assets/notebook.png';
+import brokenPicture from 'url:../assets/picture-escaping-frame.png';
+import potatoChips from 'url:../assets/potato-chips.png';
+import styleGuide from 'url:../assets/substance-of-style.png';
+import thumbDrive from 'url:../assets/thumb-drive.png';
+import curlyHead from 'url:../assets/christy-head.png';
+import seraphina from 'url:../assets/seraphina.png';
 
 // balcony
 import roomBalcony from 'url:../assets/room-balcony.jpg';
@@ -979,7 +1000,230 @@ const SPARE_ROOM: RoomSpec = {
   name: 'the spare room',
   background: roomSpare,
   aspectRatio: 1920 / 1080,
-  objects: [], // laptop, pen, box, coat, garbage, joker, ashtray, paperclips, cigarette, 
+  objects: [
+    {
+      id: 'almond-lid',
+      name: "the almond jar's lid",
+      kind: 'named',
+      image: almondLid,
+      spots: [
+        { x: 0.21, y: 0.81, width: 0.023, rotation: -80 },
+        { x: 0.97, y: 0.98, width: 0.03, rotation: -120 },
+      ]
+    },
+    {
+      id: 'bowl',
+      name: 'the bowl',
+      kind: 'named',
+      image: bowl,
+      spots: [
+        { x: 0.48, y: 0.88, width: 0.056, rotation: -90 },
+        { x: 0.9, y: 0.88, width: 0.05, rotation: -90 }
+      ]
+    },
+    {
+      id: 'broken-pencil',
+      name: 'the broken pencil',
+      kind: 'named',
+      image: brokenPencil,
+      spots: [
+        { x: 0.37, y: 0.751, width: 0.035 },
+        { x: 0.37, y: 0.981, width: 0.05, rotation: -50 },
+      ]
+    },
+    {
+      id: 'card-deck',
+      name: 'the card deck',
+      kind: 'named',
+      image: cardDeck,
+      spots: [
+        { x: 0.18, y: 0.71, width: 0.05 },
+        { x: 0.28, y: 0.6, width: 0.048 },
+      ]
+    },
+    {
+      id: 'cigarette',
+      name: 'the cigarette',
+      kind: 'named',
+      image: cigarette,
+      spots: [
+        { x: 0.56, y: 0.9, width: 0.035 },
+      ]
+    },
+    {
+      id: 'crucifix',
+      name: 'the crucifix',
+      kind: 'named',
+      image: crucifix,
+      spots: [
+        { x: 0.71, y: 0.666, width: 0.105, rotation: -90 },
+        { x: 0.05, y: 0.9, width: 0.108 }
+      ]
+    },
+    {
+      id: 'ashtray',
+      name: 'the ashtray',
+      kind: 'named',
+      image: ashtray,
+      spots: [
+        { x: 0.58, y: 0.51, width: 0.026, rotation: -90 },
+        { x: 0.5, y: 0.92, width: 0.03, rotation: -94 }
+      ]
+    },
+    {
+      id: 'fork',
+      name: 'the fork',
+      kind: 'named',
+      image: fork,
+      spots: [
+        { x: 0.1, y: 0.95, width: 0.04 },
+        { x: 0.6, y: 0.95, width: 0.054, rotation: -40 },
+      ]
+    },
+    {
+      id: 'glass',
+      name: 'the glass',
+      kind: 'named',
+      image: glass,
+      spots: [
+        { x: 0.1, y: 0.83, width: 0.06 },
+        { x: 0.84, y: 0.97, width: 0.07, rotation: -90 }
+      ]
+    },
+    {
+      id: 'hanger',
+      name: 'the hanger',
+      kind: 'named',
+      image: hanger,
+      spots: [
+        { x: 0.61, y: 0.99, width: 0.1 },
+        { x: 0.57, y: 0.74, width: 0.1, rotation: -50 },
+        { x: 0.54, y: 0.63, width: 0.07, rotation: -110 }
+      ]
+    },
+    {
+      id: 'joker',
+      name: 'the joker',
+      kind: 'named',
+      image: joker,
+      spots: [
+        { x: 0.26, y: 0.98, width: 0.035, rotation: 40 },
+        { x: 0.04, y: 0.89, width: 0.035, rotation: -90 },
+        { x: 0.31, y: 0.69, width: 0.032, rotation: 243 }
+      ]
+    },
+    {
+      id: 'lightbulb',
+      name: 'the lightbulb',
+      kind: 'named',
+      image: lightbulb,
+      spots: [
+        { x: 0.5, y: 0.53, width: 0.02, rotation:70 }
+      ]
+    },
+    {
+      id: 'magazine',
+      name: 'the magazine',
+      kind: 'named',
+      image: magazine,
+      spots: [
+        { x: 0.3, y: 0.5, width: 0.1, rotation: -50 },
+        { x: 0.46, y: 0.53, width: 0.1, rotation: -50},
+      ]
+    },
+    {
+      id: 'notebook',
+      name: 'the notebook',
+      kind: 'named',
+      image: notebook,
+      spots: [
+        { x: 0.44, y: 0.53, width: 0.08, rotation: 100 }
+      ]
+    },
+    {
+      id: 'broken-picture',
+      name: 'the broken picture',
+      kind: 'named',
+      image: brokenPicture,
+      spots: [
+        { x: 0.51, y: 0.1, width: 0.1 },
+        { x: 0.65, y: 0.51, width: 0.1, rotation: -20 },
+      ]
+    },
+    {
+      id: 'potato-chips',
+      name: 'the potato chips',
+      kind: 'named',
+      image: potatoChips,
+      spots: [
+        { x: 0.17, y: 0.87, width: 0.1, rotation: -24 },
+        { x: 0.7, y: 0.87, width: 0.12, rotation: -94 }
+      ]
+    },
+    {
+      id: 'style-guide',
+      name: 'the style guide',
+      kind: 'named',
+      image: styleGuide,
+      spots: [
+        { x: 0.45, y: 0.61, width: 0.1, rotation: 160 },
+        { x: 0.35, y: 0.9, width: 0.12, rotation: 180 }
+      ]
+    },
+    {
+      id: 'thumb-drive',
+      name: 'the malware',
+      kind: 'named',
+      image: thumbDrive,
+      spots: [
+        { x: 0.51, y: 0.91, width: 0.036 },
+        { x: 0.69, y: 0.67, width: 0.025, rotation: 50 }
+      ]
+    },
+    {
+      id: 'bottle',
+      name: 'the bottle',
+      kind: 'named',
+      image: bottle,
+      spots: [
+        { x: 0.4, y: 0.91, width: 0.06 },
+        { x: 0.82, y: 0.8, width: 0.05, rotation: -20 },
+        { x: 0.94, y: 0.95, width: 0.065 }
+      ]
+    },
+    {
+      id: 'almond-jar',
+      name: 'the almond jar',
+      kind: 'named',
+      image: almondJar,
+      spots: [
+        { x: 0.6, y: 0.81, width: 0.1, rotation: -120 },
+        { x: 0.3, y: 0.76, width: 0.08, rotation: -100}
+      ]
+    },
+    {
+      id: 'curly-head',
+      name: "the curly-haired doll's head",
+      kind: 'named',
+      image: curlyHead,
+      spots: [
+        { x: 0.75, y: 0.94, width: 0.06, rotation: 80 },
+        { x: 0.25, y: 0.5, width: 0.03 },
+        { x: 0.03, y: 0.8, width: 0.05, rotation: -20 },
+        { x: 0.6, y: 0.52, width: 0.03, rotation: 180 } 
+      ]
+    },
+    {
+      id: 'seraphina',
+      name: 'the Seraphina doll',
+      kind: 'named',
+      image: seraphina,
+      spots: [
+        { x: 0.32, y: 0.5, width: 0.07, rotation: 45 },
+        { x: 0.3, y: 0.03, width: 0.07, rotation: 110 }
+      ]
+    },
+  ],
   fusions: []
 }; // scrawls, christy doll head, Seraphina
 const BALCONY: RoomSpec = {
@@ -991,6 +1235,6 @@ const BALCONY: RoomSpec = {
   fusions: []
 }; // scribbles, Doris doll
 
-export const ROOMS = [CHILDRENS_BEDROOM, BROOM_CLOSET, MASTER_BATHROOM];
+export const ROOMS = [BROOM_CLOSET, MASTER_BATHROOM, SPARE_ROOM, CHILDRENS_BEDROOM];
 
 

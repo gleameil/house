@@ -29,7 +29,7 @@
 ~~- objects do not overflow the scene~~
 - collapsible list (right now obscures the screen)
 
-Design decisions:
+## DESIGN DECISIONS
 - A shifting subset of a room's objects are collectible?
   - No, the goal is tidying — get all of the objects and have them hidden away (garbage can?)
   - Animations indicating where they go? They fly to the correct locations?
@@ -40,3 +40,19 @@ Design decisions:
 - Word-only rooms
   - Yes, very much so
 - SD rooms (part of map? part of Out? a creepy night experience *until* Beloved?)
+
+## Almond text
+- Can be associated with any almond
+- Text should appear when an almond is found
+- When a mouse is clicked, do they automatically get the correct almond? or automatically offer the correct scrap for the almond they were given?
+- How to make it clear that the almonds are for feeding mice ("almond" thought bubble?)
+- Equivalent in text rooms????
+## Key text
+
+## Room list - with text
+## Files to include
+- Of the Abandoned?
+- Sleepers Awake / February
+- This Thing
+- Poems in /in/
+## Poems and art

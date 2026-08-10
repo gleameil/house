@@ -20,6 +20,8 @@ import {
   HiddenObjectSpec,
   RoomSpec,
   Spot,
+  HiddenObjectKind,
+  COUNTABLE_KINDS,
 } from './house.constants';
 
 interface LiveObject {
@@ -96,6 +98,9 @@ function hits(obj: LiveObject, clientX: number, clientY: number): boolean {
 // ------------------------------------------------------------------ DOM ---
 
 function pickSpot(spec: HiddenObjectSpec): Spot {
+  if (spec.kind === 'scrap') {
+    return { x: Math.random(), y: Math.random(), width: 0.04 }
+  }
   return spec.spots[Math.floor(Math.random() * spec.spots.length)];
 }
 
@@ -152,6 +157,15 @@ function allFound(): boolean {
   );
 }
 
+function updateCounter(kind: HiddenObjectKind) {
+  const objectsOfKind = state.objects.filter((o) => o.spec.kind === kind);
+  const counter = document.getElementById(`${kind}-count`);
+  if (counter && objectsOfKind.length > 0)  {
+    const found = objectsOfKind.filter((b) => b.found).length;
+    counter.textContent = `${kind}s — ${found} of ${objectsOfKind.length}`;
+  }
+}
+
 function updateList(): void {
   for (const obj of state.objects) {
     if (obj.spec.kind !== 'named' || obj.spec.partOf) continue;
@@ -171,13 +185,8 @@ function updateList(): void {
       li.classList.remove('found');
     }
   }
-  const balls = state.objects.filter((o) => o.spec.kind === 'scrawl');
-  const counter = document.getElementById('paper-ball-count');
-  if (counter && balls.length > 0) {
-    const found = balls.filter((b) => b.found).length;
-    counter.textContent = `balls of paper — ${found} of ${balls.length}`;
-    counter.classList.toggle('found', found === balls.length);
-  }
+  COUNTABLE_KINDS.forEach((k) => updateCounter(k))
+  
   if (allFound()) {
     const banner = document.getElementById('all-found');
     if (banner) banner.classList.add('visible');
@@ -339,9 +348,13 @@ function buildList(room: RoomSpec): HTMLElement {
     li.id = `to-find-fusion-${f.id}`;
     ul.appendChild(li);
   }
-  const balls = document.createElement('li');
-  balls.id = 'paper-ball-count';
-  ul.appendChild(balls);
+
+  COUNTABLE_KINDS.forEach((k) => {
+    const counterForKind = document.createElement('li');
+    counterForKind.id = `${k}-count`;
+    ul.appendChild(counterForKind);
+  });
+
   panel.appendChild(ul);
 
   const banner = document.createElement('div');
@@ -356,7 +369,6 @@ export async function enterRoom(room: RoomSpec): Promise<void> {
   while (current.length > 0) {
     current[0].remove();
   }
-  console.log('what')
   state.room = room;
   const container = document.createElement('div');
   container.className = 'house';
@@ -404,4 +416,4 @@ export async function enterRoom(room: RoomSpec): Promise<void> {
   updateList();
 }
 // Choices at present: CHILDRENS_BEDROOM, MASTER_BATHROOM, BROOM_CLOSET, SPARE_ROOM, BALCONY, LADY_BATHROOM, MASTER_BEDROOM
-enterRoom(ROOMS[2]);
+enterRoom(ROOMS[4]);

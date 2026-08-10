@@ -2,6 +2,55 @@
 // Interfaces live alongside constants, matching /in/ and /out/ convention.
 
 // shared
+import almond1 from 'url:../assets/almond1.png';
+import almond2 from 'url:../assets/almond2.png';
+
+import key1 from 'url:../assets/key1.png';
+import key2 from 'url:../assets/key2.png';
+import key3 from 'url:../assets/key3.png';
+import key4 from 'url:../assets/key4.png';
+import key5 from 'url:../assets/key5.png';
+import key6 from 'url:../assets/key6.png';
+import key7 from 'url:../assets/key7.png';
+import key8 from 'url:../assets/key8.png';
+import key9 from 'url:../assets/key9.png';
+import key10 from 'url:../assets/key10.png';
+import key11 from 'url:../assets/key11.png';
+import key12 from 'url:../assets/key12.png';
+import key13 from 'url:../assets/key13.png';
+import key14 from 'url:../assets/key14.png';
+import key15 from 'url:../assets/key16.png';
+import key16 from 'url:../assets/key17.png';
+
+import scribble1 from 'url:../assets/scribble1.png';
+import scribble2 from 'url:../assets/scribble2.png';
+import scribble3 from 'url:../assets/scribble3.png';
+import scribble4 from 'url:../assets/scribble4.png';
+import scribble5 from 'url:../assets/scribble5.png';
+import scribble6 from 'url:../assets/scribble6.png';
+import scribble7 from 'url:../assets/scribble7.png';
+import scribble8 from 'url:../assets/scribble8.png';
+import scribble9 from 'url:../assets/scribble9.png';
+import scribble10 from 'url:../assets/scribble10.png';
+import scribble11 from 'url:../assets/scribble11.png';
+import scribble12 from 'url:../assets/scribble12.png';
+import scribble14 from 'url:../assets/scribble14.png';
+import scribble15 from 'url:../assets/scribble15.png';
+import scribble16 from 'url:../assets/scribble16.png';
+import scribble17 from 'url:../assets/scribble17.png';
+import scribble18 from 'url:../assets/scribble18.png';
+import scribble19 from 'url:../assets/scribble19.png';
+import scribble20 from 'url:../assets/scribble20.png';
+import scribble21 from 'url:../assets/scribble21.png';
+import scribble22 from 'url:../assets/scribble22.png';
+import scribble23 from 'url:../assets/scribble23.png';
+import scribble24 from 'url:../assets/scribble24.png';
+import scribble25 from 'url:../assets/scribble25.png';
+import scribble26 from 'url:../assets/scribble26.png';
+import scribble27 from 'url:../assets/scribble27.png';
+import scribble28 from 'url:../assets/scribble28.png';
+import scribble29 from 'url:../assets/scribble29.png';
+
 import mouse from 'url:../assets/mouse.png';
 import paper from 'url:../assets/paper.png';
 import heart from 'url:../assets/heart.png';
@@ -119,28 +168,16 @@ import undies from 'url:../assets/undies.png';
 import guyHead from 'url:../assets/guy-head.png';
 import plusSizeHead from 'url:../assets/plus-size-head.png';
 
-// lady bathroom
-import roomLadyBathroom from 'url:../assets/room-lady-bathroom.jpg';
-import garbage from 'url:../assets/garbage.png';
-import mirror from 'url:../assets/mirror.png';
-import bracelet from 'url:../assets/bracelet.png'
-
-
-/**
- * 'named'     — appears by name in the to-find list (one-offs, keys, dolls).
- * 'scrawl' — anonymous; the list shows only a counter.
- */
 export type HiddenObjectKind =
-  | 'named'      // one-offs, dolls' parts, keys
-  | 'scrawl'    // poem paper-ball
-  | 'scribble'   // day-artwork fragment (fields: day 1..29 (no 13), fragmentIndex)
+  | 'named'      // one-offs, dolls' parts
+  | 'paper'    // poem paper-ball
+  | 'scrap'   // day-artwork fragment (fields: day 1..29 (no 13), fragmentIndex)
   | 'almond'     // carries {text, works: boolean}
   | 'key'        // carries {keyText, opens?: roomId | null}
   | 'heart';     // stitched-heart emblem token
 
 export interface MouseSpec {       // fauna, not HiddenObjectSpec
   id: string;
-  scrap: { cardId: string; pieces: number }; // This Thing card it carries
   hole: { x: number; y: number };  // exit point
   haunts: Spot[];                  // scurry waypoints
 }
@@ -166,6 +203,16 @@ export interface HiddenObjectSpec {
   /** if set, this object is a piece of a FusionSpec and is listed there,
    *  not under its own name */
   partOf?: string;
+}
+
+export interface AlmondSpec extends HiddenObjectSpec {
+  message: string;
+  scrap: { cardId: string; pieces: number }; // This Thing card the Fed Mouse carries
+}
+
+export interface KeySpec extends HiddenObjectSpec {
+  message: string;
+  roomId: string;
 }
 
 /** A doll (or any broken thing) that reassembles when all its parts are
@@ -195,6 +242,12 @@ export interface RoomSpec {
   objects: HiddenObjectSpec[];
   fusions: FusionSpec[];
 }
+
+export const ALMOND_SPOTS: Spot[] = [
+  { x: 0.1, y: 0.8, width: 0.02 }
+];
+export const KEY_SPOTS: Spot[] = []
+export const SCRIBBLE_SPOTS: Spot[] = [];
 
 /** Alpha threshold (0–255) above which a pixel counts as clickable. */
 export const ALPHA_THRESHOLD = 10;
@@ -429,7 +482,7 @@ const CHILDRENS_BEDROOM: RoomSpec = {
     {
       id: 'paper-1',
       name: 'a ball of paper',
-      kind: 'scrawl',
+      kind: 'paper',
       image: paper,
       spots: [
         { x: 0.425, y: 0.84, width: 0.032, rotation: 10 },
@@ -447,6 +500,24 @@ const CHILDRENS_BEDROOM: RoomSpec = {
         { x: 0.172, y: 0.2, width: 0.086},
         { x: 0.04, y: 0.5, width: 0.086},
       ]
+    },
+    {
+      id: 'almond-22',
+      name: 'almond',
+      kind: 'almond',
+      image: almond1,
+      spots: [
+        { x: 0.36, y: 0.87, width: 0.023, rotation: -20 }
+      ],
+    },
+    {
+      id: 'almond-23',
+      name: 'almond',
+      kind: 'almond',
+      image: almond2,
+      spots: [
+        { x: 0.67, y: 0.97, width: 0.015 }
+      ],
     },
     // --- Jordan, in two pieces -------------------------------------------
     {
@@ -694,7 +765,7 @@ const MASTER_BATHROOM: RoomSpec = {
       kind: 'named',
       image: toiletBrush,
       spots: [
-        { x: 0.1, y: 0.16, width: 0.06, rotation: -40 }
+        { x: 0.08, y: 0.16, width: 0.06, rotation: -10 }
       ]
     },
     {
@@ -764,7 +835,169 @@ const MASTER_BATHROOM: RoomSpec = {
       spots: [
         { x: 0.2, y: 0.99, width: 0.07, rotation: 48 }
       ]
-    }
+    },
+    {
+      id: 'almond-jar',
+      name: 'the almond jar',
+      kind: 'named',
+      image: almondJar,
+      spots: [
+        { x: 0.25, y: 0.34, width: 0.045, rotation: -120 },
+        { x: 0.3, y: 0.76, width: 0.08, rotation: -100}
+      ]
+    },
+    {
+      id: 'almond-lid',
+      name: "the almond jar's lid",
+      kind: 'named',
+      image: almondLid,
+      spots: [
+        { x: 0.21,  y: 0.81, width: 0.023, rotation: -120 },
+        { x: 0.18, y: 0.45, width: 0.019, rotation: -80 },
+      ]
+    },
+    {
+      id: 'almond-1',
+      name: 'almond',
+      kind: 'almond',
+      image: almond1,
+      spots: [
+        { x: 0.03, y: 0.29, width: 0.014 },
+      ],
+    },
+    {
+      id: 'almond-2',
+      name: 'almond',
+      kind: 'almond',
+      image: almond2,
+      spots: [
+        { x: 0.047, y: 0.3, width: 0.009, rotation: 30 },
+      ]
+    },
+    {
+      id: 'almond-3',
+      name: 'almond',
+      kind: 'almond',
+      image: almond1,
+      spots: [
+        { x: 0.19, y: 0.22, width: 0.014 }
+      ],
+    },
+    {
+      id: 'almond-4',
+      name: 'almond',
+      kind: 'almond',
+      image: almond2,
+      spots: [{ x: 0.15, y: 0.32, width: 0.009 },],
+    },
+    {
+      id: 'almond-5',
+      name: 'almond',
+      kind: 'almond',
+      image: almond1,
+      spots: [
+        { x: 0.02, y: 0.48, width: 0.015, rotation: -18 }
+      ],
+    },
+    {
+      id: 'almond-6',
+      name: 'almond',
+      kind: 'almond',
+      image: almond2,
+      spots: [
+        { x: 0.025, y: 0.58, width: 0.01, rotation: -18 }
+      ],
+    },
+    {
+      id: 'almond-7',
+      name: 'almond',
+      kind: 'almond',
+      image: almond1,
+      spots: [
+        { x: 0.09, y: 0.69, width: 0.02, rotation: -18 }
+      ],
+    },
+    {
+      id: 'almond-8',
+      name: 'almond',
+      kind: 'almond',
+      image: almond2,
+      spots: [
+        { x: 0.23, y: 0.68, width: 0.013, rotation: -30 }
+      ],
+    },
+    {
+      id: 'almond-9',
+      name: 'almond',
+      kind: 'almond',
+      image: almond1,
+      spots: [
+        { x: 0.25, y: 0.68, width: 0.02, rotation: -18 }
+      ],
+    },
+    {
+      id: 'almond-10',
+      name: 'almond',
+      kind: 'almond',
+      image: almond1,
+      spots: [
+        { x: 0.23, y: 0.78, width: 0.022, rotation: -48 }
+      ],
+    },
+    {
+      id: 'almond-11',
+      name: 'almond',
+      kind: 'almond',
+      image: almond2,
+      spots: [
+        { x: 0.22, y: 0.79, width: 0.013, rotation: -30 }
+      ],
+    },
+    {
+      id: 'almond-12',
+      name: 'almond',
+      kind: 'almond',
+      image: almond2,
+      spots: [
+        { x: 0.182, y: 0.8, width: 0.013, rotation: 8 }
+      ],
+    },
+    {
+      id: 'almond-13',
+      name: 'almond',
+      kind: 'almond',
+      image: almond1,
+      spots: [
+        { x: 0.035, y: 0.88, width: 0.023, rotation: -18 }
+      ],
+    },
+    {
+      id: 'almond-14',
+      name: 'almond',
+      kind: 'almond',
+      image: almond2,
+      spots: [
+        { x: 0.4, y: 0.9, width: 0.013, rotation: -18 }
+      ],
+    },
+    {
+      id: 'almond-15',
+      name: 'almond',
+      kind: 'almond',
+      image: almond2,
+      spots: [
+        { x: 0.56, y: 0.58, width: 0.013, rotation: 50 }
+      ],
+    },
+    {
+      id: 'almond-16',
+      name: 'almond',
+      kind: 'almond',
+      image: almond1,
+      spots: [
+        { x: 0.23, y: 0.68, width: 0.013, rotation: -18 }
+      ],
+    },
   ], // named: toilet paper tube, soap, toothpaste, toothbrush, razor, cockroach, mirror, Ken, breath mint?, deodorant (brand: Sansfoy), towel, loofah, underwear (men's), toilet brush, spary cleaner, underwear (women's), locket?, mop, tapestry-equivalent, barbell, gauntlet, lighter
   fusions: [],
 }; // almonds, guy doll head, evil doll head
@@ -974,6 +1207,20 @@ const BROOM_CLOSET: RoomSpec = {
       ]
     },
     {
+      id: 'almond-17',
+      name: 'almond',
+      kind: 'almond',
+      image: almond1,
+      spots: [{ x: 0.54, y: 0.15, width: 0.02 }],
+    },
+    {
+      id: 'almond-18',
+      name: 'almond',
+      kind: 'almond',
+      image: almond2,
+      spots: [{ x: 0.56, y: 0.15, width: 0.012, rotation: -40 }],
+    },
+    {
       id: 'gorilla-leg',
       name: "the gorilla figure's leg",
       kind: 'named',
@@ -1001,16 +1248,6 @@ const SPARE_ROOM: RoomSpec = {
   background: roomSpare,
   aspectRatio: 1920 / 1080,
   objects: [
-    {
-      id: 'almond-lid',
-      name: "the almond jar's lid",
-      kind: 'named',
-      image: almondLid,
-      spots: [
-        { x: 0.21, y: 0.81, width: 0.023, rotation: -80 },
-        { x: 0.97, y: 0.98, width: 0.03, rotation: -120 },
-      ]
-    },
     {
       id: 'bowl',
       name: 'the bowl',
@@ -1192,16 +1429,6 @@ const SPARE_ROOM: RoomSpec = {
       ]
     },
     {
-      id: 'almond-jar',
-      name: 'the almond jar',
-      kind: 'named',
-      image: almondJar,
-      spots: [
-        { x: 0.6, y: 0.81, width: 0.1, rotation: -120 },
-        { x: 0.3, y: 0.76, width: 0.08, rotation: -100}
-      ]
-    },
-    {
       id: 'curly-head',
       name: "the curly-haired doll's head",
       kind: 'named',
@@ -1223,6 +1450,33 @@ const SPARE_ROOM: RoomSpec = {
         { x: 0.3, y: 0.03, width: 0.07, rotation: 110 }
       ]
     },
+    {
+      id: 'almond-19',
+      name: 'almond',
+      kind: 'almond',
+      image: almond2,
+      spots: [
+        { x: 0.538, y: 0.83, width: 0.015 }
+      ],
+    },
+    {
+      id: 'almond-20',
+      name: 'almond',
+      kind: 'almond',
+      image: almond1,
+      spots: [
+        { x: 0.08, y: 0.78, width: 0.021 }
+      ],
+    },
+    {
+      id: 'almond-21',
+      name: 'almond',
+      kind: 'almond',
+      image: almond2,
+      spots: [
+        { x: 0.491, y: 0.8, width: 0.015, rotation: -291 }
+      ],
+    },
   ],
   fusions: []
 }; // scrawls, christy doll head, Seraphina
@@ -1231,10 +1485,203 @@ const BALCONY: RoomSpec = {
   name: 'the balcony',
   background: roomBalcony,
   aspectRatio: 1920 / 1080,
-  objects: [],
+  objects: [
+    {
+      id: 'scribble-1',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble1,
+      spots: SCRIBBLE_SPOTS,
+    },
+    {
+      id: 'scribble-2',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble2,
+      spots: SCRIBBLE_SPOTS
+    },
+    {
+      id: 'scribble-3',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble3,
+      spots: SCRIBBLE_SPOTS
+    },
+    {
+      id: 'scribble-4',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble4,
+      spots: SCRIBBLE_SPOTS
+    },
+    {
+      id: 'scribble-5',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble5,
+      spots: SCRIBBLE_SPOTS
+    },
+    {
+      id: 'scribble-6',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble6,
+      spots: SCRIBBLE_SPOTS
+    },
+    {
+      id: 'scribble-7',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble7,
+      spots: SCRIBBLE_SPOTS
+    }, {
+      id: 'scribble-8',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble8,
+      spots: SCRIBBLE_SPOTS
+    },
+    {
+      id: 'scribble-9',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble9,
+      spots: SCRIBBLE_SPOTS
+    },
+    {
+      id: 'scribble-10',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble10,
+      spots: SCRIBBLE_SPOTS
+    },
+    {
+      id: 'scribble-11',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble11,
+      spots: SCRIBBLE_SPOTS
+    },
+    {
+      id: 'scribble-12',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble12,
+      spots: SCRIBBLE_SPOTS
+    },
+    {
+      id: 'scribble-14',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble14,
+      spots: SCRIBBLE_SPOTS
+    },
+    {
+      id: 'scribble-15',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble15,
+      spots: SCRIBBLE_SPOTS
+    }, {
+      id: 'scribble-16',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble16,
+      spots: SCRIBBLE_SPOTS
+    },
+    {
+      id: 'scribble-17',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble17,
+      spots: SCRIBBLE_SPOTS
+    },
+    {
+      id: 'scribble-18',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble18,
+      spots: SCRIBBLE_SPOTS
+    },
+    {
+      id: 'scribble-19',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble19,
+      spots: SCRIBBLE_SPOTS
+    },
+    {
+      id: 'scribble-20',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble20,
+      spots: SCRIBBLE_SPOTS
+    },
+    {
+      id: 'scribble-21',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble21,
+      spots: SCRIBBLE_SPOTS
+    },
+    {
+      id: 'scribble-22',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble22,
+      spots: SCRIBBLE_SPOTS
+    }, {
+      id: 'scribble-23',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble23,
+      spots: SCRIBBLE_SPOTS
+    },
+    {
+      id: 'scribble-24',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble24,
+      spots: SCRIBBLE_SPOTS
+    },
+    {
+      id: 'scribble-25',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble25,
+      spots: SCRIBBLE_SPOTS
+    },
+    {
+      id: 'scribble-26',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble26,
+      spots: SCRIBBLE_SPOTS
+    },
+    {
+      id: 'scribble-27',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble27,
+      spots: SCRIBBLE_SPOTS
+    },
+    {
+      id: 'scribble-28',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble28,
+      spots: SCRIBBLE_SPOTS
+    },
+    {
+      id: 'scribble-29',
+      name: 'a scrap of art',
+      kind: 'scrap',
+      image: scribble29,
+      spots: SCRIBBLE_SPOTS,
+    },
+  ],
   fusions: []
 }; // scribbles, Doris doll
 
-export const ROOMS = [BROOM_CLOSET, MASTER_BATHROOM, SPARE_ROOM, CHILDRENS_BEDROOM];
-
-
+export const COUNTABLE_KINDS: HiddenObjectKind[] = ['key', 'almond', 'scrap', 'paper']
+export const ROOMS = [BROOM_CLOSET, MASTER_BATHROOM, SPARE_ROOM, BALCONY, CHILDRENS_BEDROOM];

@@ -23,8 +23,12 @@ import {
   HIDDEN_OBJECT_KINDS,
   COUNTABLE_KINDS,
   NamedSpec,
+  AlmondSpec,
   AnyHiddenObjectSpec,
+  BUNNY_LIVE_IMAGE,
 } from './house.constants';
+
+const ALMOND_MESSAGE_PLACEHOLDER = '[a message not yet written]';
 
 interface LiveObject {
   spec: AnyHiddenObjectSpec;
@@ -108,6 +112,18 @@ function shuffled<T>(items: T[]): T[] {
   return copy;
 }
 
+/** A free-floating random spot, resampled if it would land in the
+ *  to-find panel's top-right corner — the one part of the screen a
+ *  fully random position can't be authored away from. */
+function randomSpot(): Spot {
+  let x: number, y: number;
+  do {
+    x = Math.random();
+    y = Math.random();
+  } while (x > 0.8 && y < 0.22);
+  return { x, y, width: 0.04 };
+}
+
 /** Assigns every object in a room a Spot, keyed by object id.
  *
  *  - 'individualSpotLists' (named): one of the object's own spots, chosen
@@ -151,7 +167,7 @@ function assignSpots(room: RoomSpec): Map<string, Spot> {
       const spots = (spec as NamedSpec).spots;
       assigned.set(spec.id, spots[Math.floor(Math.random() * spots.length)]);
     } else {
-      assigned.set(spec.id, { x: Math.random(), y: Math.random(), width: 0.04 });
+      assigned.set(spec.id, randomSpot());
     }
   }
 
@@ -192,6 +208,17 @@ function missRipple(clientX: number, clientY: number): void {
   ripple.style.top = `${clientY}px`;
   document.body.appendChild(ripple);
   ripple.addEventListener('animationend', () => ripple.remove());
+}
+
+function showAlmondMessage(obj: LiveObject): void {
+  const rect = layoutRect(obj);
+  const bubble = document.createElement('div');
+  bubble.className = 'house almond-message';
+  bubble.style.left = `${rect.cx}px`;
+  bubble.style.top = `${rect.top}px`;
+  bubble.textContent = (obj.spec as AlmondSpec).message || ALMOND_MESSAGE_PLACEHOLDER;
+  document.body.appendChild(bubble);
+  bubble.addEventListener('animationend', () => bubble.remove());
 }
 
 // ------------------------------------------------------------- find flow --
@@ -248,23 +275,106 @@ function updateList(): void {
   }
 }
 
+// ----------------------------------------------------------- flourishes --
+//
+// Per-id effects independent of collection (notes.md): a handful of named
+// objects do something extra on click, on top of the normal find-fade.
+// Each flourish returns how many ms to hold the fade off for, so the
+// flourish plays to completion before the object starts disappearing.
+// Sound-driven ones (dinosaur roar, music box tune) have no audio asset
+// yet — these are visual-only stand-ins until one exists.
+
+const FLOURISHES: Record<string, (obj: LiveObject) => number> = {
+  'bunny-toy': flourishBunny,
+  trex: flourishDinosaur,
+  fairy: flourishFairy,
+  'music-box': flourishMusicBox,
+  mirror: flourishMirror,
+};
+
+function flourishBunny(obj: LiveObject): number {
+  const toyImage = obj.element.src;
+  obj.element.src = BUNNY_LIVE_IMAGE;
+  obj.element.classList.add('flourish-hop');
+  window.setTimeout(() => {
+    obj.element.src = toyImage;
+    obj.element.classList.remove('flourish-hop');
+  }, 900);
+  return 950;
+}
+
+function flourishDinosaur(obj: LiveObject): number {
+  obj.element.classList.add('flourish-roar');
+  window.setTimeout(() => obj.element.classList.remove('flourish-roar'), 650);
+  return 650;
+}
+
+function flourishFairy(obj: LiveObject): number {
+  obj.element.classList.add('flourish-flutter');
+  const rect = layoutRect(obj);
+  for (let i = 0; i < 6; i++) {
+    const angle = (i / 6) * Math.PI * 2;
+    const dist = 16 + Math.random() * 14;
+    const spark = document.createElement('div');
+    spark.className = 'house fairy-spark';
+    spark.style.left = `${rect.cx + Math.cos(angle) * dist}px`;
+    spark.style.top = `${rect.cy + Math.sin(angle) * dist}px`;
+    spark.style.animationDelay = `${i * 40}ms`;
+    document.body.appendChild(spark);
+    spark.addEventListener('animationend', () => spark.remove());
+  }
+  window.setTimeout(() => obj.element.classList.remove('flourish-flutter'), 800);
+  return 800;
+}
+
+function flourishMusicBox(obj: LiveObject): number {
+  obj.element.classList.add('flourish-wiggle');
+  const rect = layoutRect(obj);
+  ['♪', '♫', '♪'].forEach((glyph, i) => {
+    const note = document.createElement('div');
+    note.className = 'house music-note';
+    note.textContent = glyph;
+    note.style.left = `${rect.cx + (i - 1) * 10}px`;
+    note.style.top = `${rect.top}px`;
+    note.style.animationDelay = `${i * 180}ms`;
+    document.body.appendChild(note);
+    note.addEventListener('animationend', () => note.remove());
+  });
+  window.setTimeout(() => obj.element.classList.remove('flourish-wiggle'), 1400);
+  return 1400;
+}
+
+function flourishMirror(): number {
+  const flash = document.createElement('div');
+  flash.className = 'house mirror-flash';
+  state.container!.appendChild(flash);
+  flash.addEventListener('animationend', () => flash.remove());
+  return 700;
+}
+
 function find(obj: LiveObject): void {
   obj.found = true;
-  obj.element.classList.add('being-found');
-  obj.element.addEventListener(
-    'transitionend',
-    () => obj.element.classList.add('is-found'),
-    { once: true },
-  );
-  updateList();
+  const delay = FLOURISHES[obj.spec.id]?.(obj) ?? 0;
 
-  const f = fusionFor(obj);
-  if (f && !state.fusionsDone.has(f.id)) {
-    const parts = fusionParts(f);
-    if (parts.every((p) => p.found)) {
-      window.setTimeout(() => runFusion(f), 900);
+  window.setTimeout(() => {
+    obj.element.classList.add('being-found');
+    obj.element.addEventListener(
+      'transitionend',
+      () => obj.element.classList.add('is-found'),
+      { once: true },
+    );
+    updateList();
+
+    if (obj.spec.kind === 'almond') showAlmondMessage(obj);
+
+    const f = fusionFor(obj);
+    if (f && !state.fusionsDone.has(f.id)) {
+      const parts = fusionParts(f);
+      if (parts.every((p) => p.found)) {
+        window.setTimeout(() => runFusion(f), 900);
+      }
     }
-  }
+  }, delay);
 }
 
 function onRoomClick(event: MouseEvent): void {
@@ -448,6 +558,7 @@ export async function enterRoom(room: RoomSpec): Promise<void> {
     element.alt = '';
     element.className = 'hidden-object';
     element.draggable = false;
+    element.dataset.objectId = spec.id;
     const live: LiveObject = {
       spec,
       spot: spots.get(spec.id)!,
@@ -472,4 +583,4 @@ export async function enterRoom(room: RoomSpec): Promise<void> {
   updateList();
 }
 // Choices at present: CHILDRENS_BEDROOM, MASTER_BATHROOM, BROOM_CLOSET, SPARE_ROOM, BALCONY, LADY_BATHROOM, MASTER_BEDROOM
-enterRoom(ROOMS[1]);
+enterRoom(ROOMS[4]);

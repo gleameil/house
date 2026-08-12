@@ -176,6 +176,8 @@ export interface KindMeta {
   placementStrategy: PlacementStrategy;
 }
 
+export const BUNNY_LIVE_IMAGE = bunnyLive;
+
 export const HIDDEN_OBJECT_KINDS =
   { 
     named: {
@@ -379,7 +381,7 @@ const CHILDRENS_BEDROOM: RoomSpec = {
       spots: [
         { x: 0.655, y: 0.38, width: 0.085 },
         { x: 0.395, y: 0.78, width: 0.1, rotation: -30 },
-        { x: 0.855, y: 0.87, width: 0.155 },
+        { x: 0.60, y: 0.87, width: 0.155 },
       ],
     },
     {
@@ -400,7 +402,7 @@ const CHILDRENS_BEDROOM: RoomSpec = {
       image: block,
       spots: [
         { x: 0.428, y: 0.914, width: 0.032 },
-        { x: 0.76, y: 0.944, width: 0.042 },
+        { x: 0.65, y: 0.944, width: 0.042 },
         { x: 0.41, y: 0.904, width: 0.031 },
       ],
     },
@@ -410,7 +412,7 @@ const CHILDRENS_BEDROOM: RoomSpec = {
       kind: 'named',
       image: boardBook,
       spots: [
-        { x: 0.73, y: 0.845, width: 0.0975, rotation: 4 },
+        { x: 0.60, y: 0.845, width: 0.0975, rotation: 4 },
         { x: 0.03, y: 0.705, width: 0.0575 },
       ],
     },
@@ -451,7 +453,7 @@ const CHILDRENS_BEDROOM: RoomSpec = {
       image: dollhouse,
       spots: [
         { x: 0.56, y: 0.25, width: 0.1},
-        { x: 0.77, y: 0.25, width: 0.113, rotation: 10},
+        { x: 0.62, y: 0.25, width: 0.113, rotation: 10},
       ]
     },
     {
@@ -515,7 +517,7 @@ const CHILDRENS_BEDROOM: RoomSpec = {
       kind: 'named',
       image: musicBox,
       spots: [
-        { x: 0.776, y: 0.397, width: 0.072},
+        { x: 0.60, y: 0.397, width: 0.072},
       ]
     },
     {
@@ -536,7 +538,7 @@ const CHILDRENS_BEDROOM: RoomSpec = {
       image: tRex,
       spots: [
         { x: 0.654, y: 0.42, width: 0.085},
-        { x: 0.8, y: 0.52, width: 0.15},
+        { x: 0.60, y: 0.52, width: 0.15},
         { x: 0.4, y: 0.9, width: 0.125},
       ]
     },
@@ -718,8 +720,8 @@ const MASTER_BATHROOM: RoomSpec = {
       kind: 'named',
       image: bra,
       spots: [
-        { x: 0.78, y: 0.55, width: 0.1 },
-        { x: 0.9, y: 0.36, width: 0.09 },
+        { x: 0.62, y: 0.55, width: 0.1 },
+        { x: 0.63, y: 0.36, width: 0.09 },
         { x: 0.34, y: 0.044, width: 0.08 },
       ]
     },
@@ -729,8 +731,13 @@ const MASTER_BATHROOM: RoomSpec = {
       kind: 'named',
       image: bug,
       spots: [
-        { x: 0.98, y: 0.4, width: 0.03 },
-        { x: 0.97, y: 0.76, width: 0.06 },
+        // pulled in from x:0.98/0.97 — was always under the to-find panel,
+        // which covers roughly the rightmost 0.20-0.30 of the room
+        // (the exact fraction is per-room: panel width tracks its longest
+        // list line, so there's no single universal cutoff — stay well
+        // clear, under ~0.65, rather than toeing a room-specific line)
+        { x: 0.63, y: 0.4, width: 0.03 },
+        { x: 0.60, y: 0.76, width: 0.06 },
       ]
     },
     {
@@ -739,9 +746,9 @@ const MASTER_BATHROOM: RoomSpec = {
       kind: 'named',
       image: deodorant,
       spots: [
-        { x: 0.73, y: 0.34, width: 0.03 },
-        { x: 0.93, y: 0.67, width: 0.07 },
-        { x: 0.94, y: 0.4, width: 0.03 },
+        { x: 0.63, y: 0.34, width: 0.03 },
+        { x: 0.62, y: 0.67, width: 0.07 },
+        { x: 0.64, y: 0.4, width: 0.03 },
       ]
     },
     {
@@ -772,7 +779,7 @@ const MASTER_BATHROOM: RoomSpec = {
       kind: 'named',
       image: lighter,
       spots: [
-        { x: 0.95, y: 0.778, width: 0.04 },
+        { x: 0.63, y: 0.778, width: 0.04 },
         { x: 0.65, y: 0.96, width: 0.05, rotation: -80 },
       ]
     },
@@ -782,7 +789,8 @@ const MASTER_BATHROOM: RoomSpec = {
       kind: 'named',
       image: loofah,
       spots: [
-        { x: 0.88, y: 0.46, width: 0.1 },
+        // was x:0.88 — its only spot, so it was *always* under the panel
+        { x: 0.60, y: 0.46, width: 0.1 },
       ]
     },
     {
@@ -1084,7 +1092,7 @@ const BROOM_CLOSET: RoomSpec = {
       kind: 'named',
       image: hornet,
       spots: [
-        { x: 0.78, y: 0.37, width: 0.06 },
+        { x: 0.60, y: 0.37, width: 0.06 },
         { x: 0.12, y: 0.17, width: 0.06 },
         { x: 0.58, y: 0.87, width: 0.06 },
       ]
@@ -1154,7 +1162,7 @@ const BROOM_CLOSET: RoomSpec = {
       kind: 'named',
       image: plunger,
       spots: [
-        { x: 0.8, y: 0.9, width: 0.08, }
+        { x: 0.60, y: 0.9, width: 0.08, }
       ],
     },
     {
@@ -1275,7 +1283,7 @@ const SPARE_ROOM: RoomSpec = {
       image: bowl,
       spots: [
         { x: 0.48, y: 0.88, width: 0.056, rotation: -90 },
-        { x: 0.9, y: 0.88, width: 0.05, rotation: -90 }
+        { x: 0.60, y: 0.88, width: 0.05, rotation: -90 }
       ]
     },
     {
@@ -1344,7 +1352,7 @@ const SPARE_ROOM: RoomSpec = {
       image: glass,
       spots: [
         { x: 0.1, y: 0.83, width: 0.06 },
-        { x: 0.84, y: 0.97, width: 0.07, rotation: -90 }
+        { x: 0.60, y: 0.97, width: 0.07, rotation: -90 }
       ]
     },
     {
@@ -1444,8 +1452,8 @@ const SPARE_ROOM: RoomSpec = {
       image: bottle,
       spots: [
         { x: 0.4, y: 0.91, width: 0.06 },
-        { x: 0.82, y: 0.8, width: 0.05, rotation: -20 },
-        { x: 0.94, y: 0.95, width: 0.065 }
+        { x: 0.63, y: 0.8, width: 0.05, rotation: -20 },
+        { x: 0.60, y: 0.95, width: 0.065 }
       ]
     },
     {

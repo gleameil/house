@@ -150,6 +150,206 @@ body {
   }
 }
 
+/* -------------------------------------------------------- almond message -- */
+
+.almond-message {
+  position: fixed;
+  transform: translate(-50%, -80%);
+  max-width: 14rem;
+  padding: 0.2rem 0.5rem;
+  font-style: italic;
+  font-size: 0.95rem;
+  text-align: center;
+  color: var(--parchment);
+  text-shadow: 0 0 0.5rem rgba(20, 14, 9, 0.9), 0 0 0.9rem rgba(20, 14, 9, 0.7);
+  pointer-events: none;
+  white-space: pre-wrap;
+  animation: almond-float 2.8s ease-out both;
+}
+
+@keyframes almond-float {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -60%);
+  }
+  18% {
+    opacity: 1;
+    transform: translate(-50%, -95%);
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -150%);
+  }
+}
+
+/* ----------------------------------------------------------- flourishes -- */
+
+.flourish-hop {
+  animation: hop 0.45s ease-in-out 2;
+}
+
+@keyframes hop {
+  0%,
+  100% {
+    translate: 0 0;
+  }
+  30% {
+    translate: 0 -14%;
+  }
+  60% {
+    translate: 0 -4%;
+  }
+}
+
+.flourish-roar {
+  animation: roar-shake 0.65s ease;
+  transform-origin: 50% 100%;
+}
+
+@keyframes roar-shake {
+  0%,
+  100% {
+    scale: 1 1;
+  }
+  20% {
+    scale: 1.08 1.08;
+    translate: -2% 0;
+  }
+  40% {
+    scale: 0.96 0.96;
+    translate: 2% 0;
+  }
+  60% {
+    scale: 1.05 1.05;
+    translate: -1% 0;
+  }
+  80% {
+    scale: 0.98 0.98;
+  }
+}
+
+.flourish-flutter {
+  animation: flutter 0.8s ease-in-out;
+}
+
+@keyframes flutter {
+  0%,
+  100% {
+    rotate: 0deg;
+    scale: 1 1;
+  }
+  25% {
+    rotate: -6deg;
+    scale: 1.05 1.05;
+  }
+  50% {
+    rotate: 4deg;
+    scale: 0.97 0.97;
+  }
+  75% {
+    rotate: -3deg;
+    scale: 1.03 1.03;
+  }
+}
+
+.fairy-spark {
+  position: fixed;
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 50%;
+  background: radial-gradient(circle, #fff8dd 0%, rgba(255, 248, 221, 0) 70%);
+  pointer-events: none;
+  animation: spark-pop 0.6s ease-out both;
+}
+
+@keyframes spark-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  30% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.4) translateY(-0.6rem);
+  }
+}
+
+.flourish-wiggle {
+  animation: wiggle 0.35s ease-in-out 4;
+}
+
+@keyframes wiggle {
+  0%,
+  100% {
+    rotate: 0deg;
+  }
+  25% {
+    rotate: -3deg;
+  }
+  75% {
+    rotate: 3deg;
+  }
+}
+
+.music-note {
+  position: fixed;
+  font-size: 1.1rem;
+  color: var(--parchment);
+  text-shadow: 0 0 0.4rem rgba(20, 14, 9, 0.8);
+  pointer-events: none;
+  animation: note-float 1.1s ease-out both;
+}
+
+@keyframes note-float {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0) scale(0.8);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -2.2rem) scale(1.1) rotate(12deg);
+  }
+}
+
+.mirror-flash {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    rgba(255, 255, 255, 0) 30%,
+    rgba(255, 255, 255, 0.9) 48%,
+    rgba(255, 255, 255, 0) 66%
+  );
+  background-size: 250% 250%;
+  background-position: -100% -100%;
+  mix-blend-mode: screen;
+  animation: mirror-sweep 0.7s ease-in;
+}
+
+@keyframes mirror-sweep {
+  0% {
+    background-position: -120% -120%;
+    opacity: 0;
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    background-position: 40% 40%;
+    opacity: 0;
+  }
+}
+
 /* -------------------------------------------------------------- fusion -- */
 
 #fusion-overlay {

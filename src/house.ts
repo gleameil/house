@@ -17,15 +17,17 @@ import {
   ALPHA_THRESHOLD,
   ROOMS,
   FusionSpec,
-  HiddenObjectSpec,
   RoomSpec,
   Spot,
   HiddenObjectKind,
+  HIDDEN_OBJECT_KINDS,
   COUNTABLE_KINDS,
+  NamedSpec,
+  AnyHiddenObjectSpec,
 } from './house.constants';
 
 interface LiveObject {
-  spec: HiddenObjectSpec;
+  spec: AnyHiddenObjectSpec;
   spot: Spot;
   element: HTMLImageElement;
   naturalWidth: number;
@@ -97,11 +99,63 @@ function hits(obj: LiveObject, clientX: number, clientY: number): boolean {
 
 // ------------------------------------------------------------------ DOM ---
 
-function pickSpot(spec: HiddenObjectSpec): Spot {
-  if (spec.kind === 'scrap') {
-    return { x: Math.random(), y: Math.random(), width: 0.04 }
+function shuffled<T>(items: T[]): T[] {
+  const copy = items.slice();
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
   }
-  return spec.spots[Math.floor(Math.random() * spec.spots.length)];
+  return copy;
+}
+
+/** Assigns every object in a room a Spot, keyed by object id.
+ *
+ *  - 'individualSpotLists' (named): one of the object's own spots, chosen
+ *    at random.
+ *  - 'random' (scrap): a free-floating random position.
+ *  - 'sharedSpotList' (paper, almond, key): the room supplies one pool of
+ *    spots per kind (`room.sharedSpots[kind]`); the pool is shuffled and
+ *    handed out one spot per object of that kind, so within a room no two
+ *    objects of the same kind ever land on the same spot. The pool must
+ *    have at least as many spots as there are objects of that kind in the
+ *    room — this throws early if a room is under-provisioned rather than
+ *    silently reusing a spot.
+ */
+function assignSpots(room: RoomSpec): Map<string, Spot> {
+  const assigned = new Map<string, Spot>();
+
+  const sharedPoolKinds = new Set<HiddenObjectKind>();
+  for (const spec of room.objects) {
+    if (HIDDEN_OBJECT_KINDS[spec.kind].placementStrategy === 'sharedSpotList') {
+      sharedPoolKinds.add(spec.kind);
+    }
+  }
+
+  for (const kind of sharedPoolKinds) {
+    const objectsOfKind = room.objects.filter((o) => o.kind === kind);
+    const pool = room.sharedSpots?.[kind] ?? [];
+    if (pool.length < objectsOfKind.length) {
+      throw new Error(
+        `Room "${room.id}" has ${objectsOfKind.length} objects of kind ` +
+          `"${kind}" but only ${pool.length} shared spots for them.`,
+      );
+    }
+    const pick = shuffled(pool);
+    objectsOfKind.forEach((spec, i) => assigned.set(spec.id, pick[i]));
+  }
+
+  for (const spec of room.objects) {
+    if (assigned.has(spec.id)) continue;
+    const strategy = HIDDEN_OBJECT_KINDS[spec.kind].placementStrategy;
+    if (strategy === 'individualSpotLists') {
+      const spots = (spec as NamedSpec).spots;
+      assigned.set(spec.id, spots[Math.floor(Math.random() * spots.length)]);
+    } else {
+      assigned.set(spec.id, { x: Math.random(), y: Math.random(), width: 0.04 });
+    }
+  }
+
+  return assigned;
 }
 
 function placeAtSpot(
@@ -143,11 +197,11 @@ function missRipple(clientX: number, clientY: number): void {
 // ------------------------------------------------------------- find flow --
 
 function fusionFor(obj: LiveObject): FusionSpec | undefined {
-  return state.room!.fusions.find((f) => f.id === obj.spec.partOf);
+  return state.room!.fusions.find((f) => f.id === (obj.spec as NamedSpec).partOf);
 }
 
 function fusionParts(f: FusionSpec): LiveObject[] {
-  return state.objects.filter((o) => o.spec.partOf === f.id);
+  return state.objects.filter((o) => (o.spec as NamedSpec).partOf === f.id);
 }
 
 function allFound(): boolean {
@@ -340,7 +394,7 @@ function buildList(room: RoomSpec): HTMLElement {
     if (spec.kind !== 'named' || spec.partOf) continue;
     const li = document.createElement('li');
     li.id = `to-find-${spec.id}`;
-    li.textContent = spec.name;
+    li.textContent = (spec as NamedSpec).name;
     ul.appendChild(li);
   }
   for (const f of room.fusions) {
@@ -385,6 +439,8 @@ export async function enterRoom(room: RoomSpec): Promise<void> {
     room.objects.map((spec) => loadImage(spec.image)),
   );
 
+  const spots = assignSpots(room);
+
   state.objects = room.objects.map((spec, i) => {
     const img = images[i];
     const element = document.createElement('img');
@@ -394,7 +450,7 @@ export async function enterRoom(room: RoomSpec): Promise<void> {
     element.draggable = false;
     const live: LiveObject = {
       spec,
-      spot: pickSpot(spec),
+      spot: spots.get(spec.id)!,
       element,
       naturalWidth: img.naturalWidth,
       naturalHeight: img.naturalHeight,
@@ -416,4 +472,4 @@ export async function enterRoom(room: RoomSpec): Promise<void> {
   updateList();
 }
 // Choices at present: CHILDRENS_BEDROOM, MASTER_BATHROOM, BROOM_CLOSET, SPARE_ROOM, BALCONY, LADY_BATHROOM, MASTER_BEDROOM
-enterRoom(ROOMS[4]);
+enterRoom(ROOMS[1]);

@@ -9,15 +9,17 @@ This file orients an AI assistant (or future developer) to the `house` repo. Rea
 `house` is **the Abandoned House** — a hidden-object game and one of the seven environments of *Digital February*, the net art that redeems the tragedies of *Of the Abandoned*. In the fiction, it unlocks February 8 (Brook's birthday). The player searches rooms of a house for objects that don't belong there and tidies them away.
 
 The loot table carries the ethics, not just the mechanics:
-- **Named objects** (books, doll parts) — one-offs; significant items, including fossil-fragments meant to eventually flow into the DOLLS game in `/in/`
+- **Named objects** (books, doll parts) — one-offs; significant items, including fossil-fragments meant to eventually flow into the DOLLS game in `/in/`. Doll pieces already exist and are placed in rooms; the fusion cutscene (see Architecture) is working, not aspirational.
 - **Paper balls** — repeats; what survived discarding, tied to one poetry book
-- **Scraps** — windblown day-artwork fragments, freely scattered (currently the only kind used in the balcony room)
+- **Scraps** — windblown day-artwork fragments, freely scattered (currently the only kind used in the balcony room). May eventually prompt the player to write a short original poem on finding one — a lune, the English 5-3-5 syllable haiku equivalent. Design still TBD; not yet built.
 - **Almonds** — repeats; carry a message and are meant to be traded to mice for poem-fragments (mice not yet implemented — see Known Debt)
-- **Keys** — repeats; room progression currency (not yet wired to actually unlock anything — see Known Debt)
+- **Keys** — repeats; room progression currency. Individually illustrated (16 unique key assets exist, not one generic key reused), and each is meant to carry its own associated text — a hermeneutic strategy, not just an "opens door" label. Not yet wired to actually unlock anything, and most key text is still unwritten — see Known Debt.
 
-Target scope is **~13 rooms**. Five exist today: the broom closet, master bathroom, spare room, balcony, and children's bedroom.
+**Current scope is five rooms** (broom closet, master bathroom, spare room, balcony, children's bedroom) — this is the intended core, not a rough draft toward a larger illustrated set. If time allows, additional **text-based rooms** reachable from a map may be added, but the game is not scoped toward more illustrated rooms.
 
-No framework — vanilla TypeScript, bundled with Parcel, same as `/in/` and `/out/`. No backend. Currently **no persistence at all**: progress lives only in the in-memory `state` object in `house.ts` and is lost on reload. This repo is not yet deployed anywhere.
+No framework — vanilla TypeScript, bundled with Parcel, same as `/in/` and `/out/`. No backend. Currently **no persistence at all**: progress lives only in the in-memory `state` object in `house.ts` and is lost on reload.
+
+The engine (`house.ts` / `house.constants.ts`) was originally written by Fable (Claude Mythos 5), not Nora — she reads it only as needed to make edits, not from having written it. Don't assume she already knows how a given piece of the engine works; explain mechanics rather than referencing them shorthand.
 
 ---
 
@@ -90,13 +92,14 @@ Tracked more informally in `notes.md`, but the load-bearing ones:
 1. **Mice are unimplemented.** `MouseSpec` is fully typed in `house.constants.ts` but never referenced from `house.ts` — no mouse rendering, scurrying, or almond-for-poem-scrap trade exists yet.
 2. **Keys don't unlock anything.** `KeySpec.roomId` is defined but never read. Room-to-room progression is currently just "clear the room → advance to `ROOMS[i+1]` cyclically" in `updateList()` — a placeholder, not real gating.
 3. **No persistence.** Found-state, fusions, and room order all live in the module-level `state` object and vanish on reload. This blocks the eventual `/in/` connection (fossil-fragments need to survive a page navigation to reach the DOLLS game).
-4. **The "to find" list can obscure the scene** on narrow viewports — flagged in `notes.md`, not yet fixed. A collapsible panel is the likely fix.
-5. **Only 5 of ~13 planned rooms exist**: broom closet, master bathroom, spare room, balcony, children's bedroom.
+4. **The "to find" list obscures the scene at all viewport sizes**, not just narrow ones — flagged in `notes.md`, not yet fixed. A collapsible panel is one fix; simply keeping objects placed out of the panel's fixed corner is a cheaper one and may be preferred over building collapse behavior.
+5. **`enterRoom(ROOMS[1])` at the bottom of `house.ts` is a deliberate dev convenience**, not a bug — it jumps straight to whichever room is currently being worked on rather than starting at `ROOMS[0]`. Fine for development; will need to become a real entry point (and the cyclic auto-advance in `updateList()` a real progression system) before this is anything but a dev build.
 6. **Object effects are unbuilt**: the dinosaur roar, toy bunny → live bunny, fairy sparkle, music box tune, and mirror light-ripple are all still just static art per `notes.md`.
 7. **No connection between `/in/` and `house/`** yet — this is the single biggest architectural gap before DOLLS can consume this game's output. Needs a persistence + handoff design, not just a URL param (contrast with the `/in/`↔`/out/` query-param contract, which works because both sides are stateless per-visit).
+8. **The poem–almond–key–message mapping and the room-navigation map are active parallel work**, not yet reflected in code at all: which lune prompt goes with which scrap, which message goes with which almond and which key, and the drawn map that will eventually let text-based rooms be reached. Content/design work, tracked outside this file for now.
 
 ---
 
 ## Deployment
 
-Not yet live. There is no `.github/workflows/`. `/in/` and `/out/` are each their own repo under the same GitHub owner, each deployed as a GitHub Pages **project site** via a `Setup Node → npm install → npm run build → upload-pages-artifact → deploy-pages` Actions workflow, landing at `gleameil.github.io/in` and `gleameil.github.io/out` respectively. `house` is structured identically (own repo, own `package.json` with a `build` script producing `dist/` via `parcel build index.html --public-url ./`) and should follow the same pattern to land at `gleameil.github.io/house`.
+`.github/workflows/main.yml` mirrors `/in/` and `/out/` exactly: `Setup Node → npm install → npm run build → upload-pages-artifact → deploy-pages`, landing at `gleameil.github.io/house` once the repo's Pages source is set to GitHub Actions. **Deliberately not yet made public** — the game needs more features before the URL is ready to share, per Nora. Don't flip visibility, announce the URL, or treat this as "shipped" without checking — the deploy plumbing being ready and the game being ready are two different milestones.

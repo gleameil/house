@@ -265,7 +265,7 @@ export interface AlmondSpec extends HiddenObjectSpec {
 export interface KeySpec extends HiddenObjectSpec {
   kind: 'key';
   message: string;
-  roomId: string;
+  roomId?: string;
 }
 
 export type AnyHiddenObjectSpec = ScrapSpec | NamedSpec | PaperSpec | AlmondSpec | KeySpec;
@@ -337,7 +337,7 @@ export const BROOM_CLOSET_ALMOND_SPOTS: Spot[] = [
   { x: 0.56, y: 0.15, width: 0.012, rotation: -40 },
 ];
 
-export const SPARE_ROOM_ALMOND_SPOTS: Spot[] = [
+export const SPARE_ROOM_ALMOND_SPOTS: Spot[] = [ // 
   { x: 0.538, y: 0.83, width: 0.015 },
   { x: 0.08, y: 0.78, width: 0.01 },
   { x: 0.491, y: 0.8, width: 0.015, rotation: -291 },
@@ -381,7 +381,6 @@ const CHILDRENS_BEDROOM: RoomSpec = {
       spots: [
         { x: 0.655, y: 0.38, width: 0.085 },
         { x: 0.395, y: 0.78, width: 0.1, rotation: -30 },
-        { x: 0.60, y: 0.87, width: 0.155 },
       ],
     },
     {
@@ -412,7 +411,7 @@ const CHILDRENS_BEDROOM: RoomSpec = {
       kind: 'named',
       image: boardBook,
       spots: [
-        { x: 0.60, y: 0.845, width: 0.0975, rotation: 4 },
+        { x: 0.60, y: 0.845, width: 0.0675, rotation: 4 },
         { x: 0.03, y: 0.705, width: 0.0575 },
       ],
     },
@@ -517,7 +516,7 @@ const CHILDRENS_BEDROOM: RoomSpec = {
       kind: 'named',
       image: musicBox,
       spots: [
-        { x: 0.60, y: 0.397, width: 0.072},
+        { x: 0.60, y: 0.397, width: 0.052},
       ]
     },
     {
@@ -747,7 +746,7 @@ const MASTER_BATHROOM: RoomSpec = {
       image: deodorant,
       spots: [
         { x: 0.63, y: 0.34, width: 0.03 },
-        { x: 0.62, y: 0.67, width: 0.07 },
+        { x: 0.62, y: 0.67, width: 0.03 },
         { x: 0.64, y: 0.4, width: 0.03 },
       ]
     },

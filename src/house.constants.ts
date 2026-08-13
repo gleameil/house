@@ -317,16 +317,596 @@ export const SCRIBBLE_SPOTS: Spot[] = [];
 // swap these out wholesale once it is. Distribution across rooms follows
 // her direction: most in the spare room, 1-3 in each other room.
 export const POEM_CONTENT: Record<string, { title: string; body: string }> = {
-  'poem-1': { title: '(untitled)', body: 'This paper hasn’t found its poem yet.' },
-  'poem-2': { title: '(untitled)', body: 'This paper hasn’t found its poem yet.' },
-  'poem-3': { title: '(untitled)', body: 'This paper hasn’t found its poem yet.' },
-  'poem-4': { title: '(untitled)', body: 'This paper hasn’t found its poem yet.' },
-  'poem-5': { title: '(untitled)', body: 'This paper hasn’t found its poem yet.' },
-  'poem-6': { title: '(untitled)', body: 'This paper hasn’t found its poem yet.' },
-  'poem-7': { title: '(untitled)', body: 'This paper hasn’t found its poem yet.' },
-  'poem-8': { title: '(untitled)', body: 'This paper hasn’t found its poem yet.' },
-  'poem-9': { title: '(untitled)', body: 'This paper hasn’t found its poem yet.' },
-  'poem-10': { title: '(untitled)', body: 'This paper hasn’t found its poem yet.' },
+  'poem-1': { title: 'Waking Ugly', body: `A thing of ice, I know no spring. For heat  
+there’s just the first gold dazzle of your touch,  
+and then I run, and you do not give chase,  
+or else you run, and I do not give chase.  
+The sun makes love to dream dolls of me, not  
+to me, although there’s lying on the couch—  
+The lamp lights up the puzzle in my lap,  
+the curving lilies penciled in the margin.  
+No solution yet. The wind hurls sleet   
+into the windowpane. I don’t look up  
+from Flower Number Three, a smudgy rose,  
+thinking perhaps the thorns, if they were real,  
+could prick a blooming flush into my skin...  
+In summer will I leave this self behind?` },
+  'poem-2': { title: 'Afternoon with the Psychic', body: `First, take   
+your greatest obstacle,  
+build it into a wall,  
+then knock that wall *down*
+
+(hm, not   
+the tar-dripping   
+poison rocks—  
+the cinder blocks,   
+there are more of them,   
+so many   
+they stretch to the moon and back).
+
+Next, channel the angels, write   
+what comes into your head
+
+(love, love,   
+love, copper-eyed   
+love—   
+the psychic says my fanfic god   
+is Archangel Michael!)....
+
+Michael’s no match   
+for infinite self-regenerating   
+walls:
+
+brain drool dribbles   
+into formula.  
+Growing affected and effective, 
+
+I claim cinder blocks   
+and unreal love   
+for my core.` },
+  'poem-3': { title: 'The Fool\'s Ballad', body: `I loved a girl as fair, as gay  
+As any morn in merry May  
+In merry May full fair was she,  
+But ay! she loved not me.
+
+I plucked the rose, the daffodil,  
+Of all sweet odors drank my fill,  
+I wove a crown full fair to see  
+So she might then love me.
+
+She took my bright and od’rous crown  
+She danced it up the hills and down,  
+In merry May full fair was she,  
+But ay! she loved not me.
+
+I called my jeweler, called my smith,  
+and  ordered to be wrought forthwith  
+A diadem full fair to see  
+So she might then love me.
+
+She wore my fair and glist’ring crown  
+In the country, in the town.  
+In merry May full fair was she,  
+But ay! she loved not me.
+
+Enough with her, enough with all!  
+I’ll leave my high and handsome hall,  
+To sing and play and act the fool  
+To serve those whom I once did rule.
+
+She thought me dead, she thought me gone,  
+She died, she died, and I lived on,  
+And so a happy fool I’ll be  
+While worms with her make free.
+
+I loved a girl as fair, as gay,  
+As any morn in merry May  
+In merry May full fair was she,  
+But ay! she loved not me.
+` },
+  'poem-4': { title: 'Color Schemes', body: `Although   
+I painted you  
+with the garish gleam   
+of love,
+
+I could not give you  
+the colors of the real
+
+without   
+a living model.` },
+  'poem-5': { title: 'Panentheist Palette', body: `The colors of the real, gray  
+and every other color,
+
+are yours, just like   
+my rainbows  
+and blinding light.` },
+  'poem-6': { title: 'Sacrifice', body: `I want to marry him, the only one  
+who knows me and would still do anything  
+to save me, and whose touch is like the sun,  
+the wind, the rain—in one—who bought the ring  
+and told true, laughing tales of five years’ love   
+for me—for *me*—that evening in the park,  
+the one whose seeking mind can fly above  
+not only me but clouds, into the dark  
+between the spheres—the one for whom I feel  
+quite nearly nothing more than quick desire,  
+because you ask me, laughing, “Would you kneel  
+before that thoughtless fool, give him the fire  
+I gave to you? You say he has no peer?  
+And you can care for him—when I am here?”` },
+  'poem-7': { title: 'Sacrifice', body: `I say, “Love, let me love you and be yours,”  
+and you make no reply but this: my heart  
+flies to some enemy, whose every art  
+to hurt me and to barricade the doors  
+I cannot cease to love. I wash the floors,  
+I cook, I kiss, I smile, but now I start  
+to question you. Your answer, like a dart:  
+“Love that instead of me, for that abhors  
+you less than I do, and, less cruel, will harm  
+you less. And, yet, if you should seek me still,  
+know this: I love you, and will never cease  
+to love you, with a love that can disarm  
+all enemies, all friends, and you. I kill  
+all whom I love, and I love all—there’s peace.”` },
+  'poem-8': { title: 'Liars', body: `You call to me with beauties, and I call them lies,   
+because they are. 
+
+(The brain generates beauty to teach us what to eat and what to fuck, with twiddly extras added on because evolution is not perfectly efficient.)
+
+I don’t buy your lies,   
+but I’ll pretend to.
+
+Certain secret days,  
+everything is beautiful,   
+and I can’t stand—
+
+Evernost is—
+
+my saying, I don’t *care* if it’s bullshit anymore. I’m going to pretend   
+it’s not   
+for the space of a story.
+
+I’m going to pretend  
+you appeared to me in my dorm room  
+and clawed open my arm  
+to show me  
+the wonder   
+inside—that it was  
+you, not  
+my imagination 
+
+(and you who let the baby sparrows fall from their nests and die.   
+Liar.) 
+
+I said   
+I would lie for you,   
+so now I’m starting. 
+
+I won’t lie egregiously—not about you—  
+just enough to make you real. So,   
+I lie, 
+
+it’s not that I knew it was bullshit,   
+from the bottom of my mind to the top.   
+It’s that I thought it was bullshit, 
+
+and because I could not care about you, I,  
+wintry,  
+cared about nothing at all.` },
+  'poem-9': { title: 'Erosion', body: `But:  
+rainbows  
+have nothing to do with you at all.
+
+Or:  
+what rainbows are  
+to me  
+has nothing to do  
+with what you   
+are  
+to me.
+
+Or:  
+you are
+
+what I feel  
+when I submerge   
+my grubby tee-shirted body  
+in the fast and frigid stream  
+and Vaughan Williams’s   
+“Lark Ascending”  
+comes again  
+through my earbuds
+
+so much less
+
+than you are
+
+the specific pressure  
+that specific currents   
+of water  
+exert   
+on specific stretches  
+of sedimentary rock  
+to erode specific  
+patterns  
+no one  
+other than you  
+will ever recognize.` },
+  'poem-10': { title: 'Purple Prose', body: `The workshop  
+rejected you.
+
+Sad girl,  
+sick mother,  
+jerk father,  
+not one real friend:  
+there’s the story’s core.
+
+What did *you* add?  
+Purple prose, 
+
+fantasy.  
+Why bother?
+
+(Why  
+would I bother  
+with that bore and her messed-up parents
+
+without *you*?)` },
+  'poem-11': { title: 'Heavy Love', body: `I loved a girl blithe as a morn in May.  
+I longed for her to see that love divine  
+Is less than that I bear her, and less fine,  
+But, as one jesting, she would always say,  
+“Dear sir, I beg you take your love away,  
+Bestow it on some warmer heart than mine,  
+And with some sterner spirit let it twine.  
+I am too frail to bear its weight. Oh, slay  
+Me not\!” Time passed, and I could not deny  
+She loved me not. For woe, to you I turn  
+My suit, O Night, and, gazing long, I scry  
+Deep in the dark between the stars’ cold burn  
+A woman’s form more darkly fair, more high,  
+Than that gay maid’s whose heart I could not earn.` },
+  'poem-12': { title: 'Courting the Night', body: `They chant supernal peace into night’s face—  
+peace was never further from my mind.  
+For them, night’s holy paradox, a trace  
+of God, a void. They do not hear the wind.  
+The wind, that flying, crying, spying *why*,  
+ruins the roots. Night holds no consolation, no.  
+It echoes, echoes, twists the chanted lie.  
+It echoes, echoes all my railing woe.  
+It echoes, echoes, echoes, and I strum  
+the strings, I sing. Dead symphonies arise.  
+My voice twines with lost ghosts’, and devils hum  
+beneath the screech of birds with yellow eyes —  
+but no. There is no choir, though I confess  
+I’d rather sing with hell than emptiness.` },
+  'poem-13': { title: 'Every Day', body: `coughing Sandi   
+on the other till with the   
+spray-on suntan  
+whose kids never call  
+and cost her two hundred dollars when   
+they visit, whose three mastiffs  
+savage her furniture and get sick on   
+the cake   
+she bought herself when her ex   
+stole her credit card and took off   
+for Vegas` },
+  'poem-14': { title: 'Soliloquy', body: `Alone &  
+a bone & my own….
+
+a pinky-peach sore:  
+Together.
+
+Together:  
+flash o’ laughin’ lie:
+
+(transcendent union:  
+what awkward fiction:  
+approximation  
+to contradiction)
+
+Alone they think they’re  
+Together 
+
+am  
+i?` },
+  'poem-15': { title: 'How to Know You', body: `How to know  
+water  
+when even  
+capillarity  
+is a mystery?
+
+How   
+to know 
+
+them:  
+in every way that counts  
+my superiors,
+
+but   
+their banter merges them  
+into three   
+paper-thin   
+stereotypes? 
+
+I know  
+how to swoon, but   
+how to     ?` },
+  'poem-16': { title: 'Everything', body: `My other self met a motley fool, who carried a basket of keys and would not give her hers.   
+Said I, “ The encounter was itself the key — a sacred image to treasure forever\! Suppose he was my Love in disguise.”  
+“He was himself,” she assured me with unfathomable certainty, “no more or less, and quite beyond the reach of your Love.”  
+“Then,” I said, “we call a lie by the name of my Love — let it be trampled by fools\! My true Love is quite everything, so nothing is beyond his reach.”  
+“But surely,” she said, “nothing is quite everything.”` },
+  'poem-17': { title: 'Level-setting Expectations', body: `my readers  
+must expect   
+to meet Sandi` },
+  'poem-18': { title: 'Unyou', body: `I’ll show them all,  
+I said,  
+I’ll write unyou  
+and see how they like it.
+
+(accrual of interest is minimal over the next two light years       happily nodding in his chair       merry X-Mas       perseveration was the reason he was arrested       unplug and enjoy the great outdoors\!)
+
+Unyou
+
+is gray, occasionally  
+the variegated gray  
+of newspapers,   
+of pigeons, mostly  
+the gray  
+of file cabinets and cinder blocks.  
+Unyou  
+is not
+
+Unyou is not  
+complex enough  
+either
+
+but   
+because it pretended  
+to be real,  
+they pretended  
+to like it.` },
+  'poem-19': { title: 'More or Less', body: `They have more.  
+I have less.
+
+They act like  
+they have  
+everything,  
+whereas I   
+say there is
+
+so 
+
+much
+
+more.
+
+(How I love the words  
+*so much more*  
+even though they are   
+so much less than` },
+  'poem-20': { title: 'On Comparison', body: `A mouse  
+a cigarette butt  
+a complexly indeterminate linguistic structure  
+a divorce  
+*are*.
+
+light  
+and rainbow  
+are  
+mere  
+trammeled   
+metaphor,  
+(namely,
+
+metaphor  
+for what  
+is so much better  
+at *being*  
+   
+that the comparison  
+is
+
+the comparison   
+is laughable.)` },
+  'poem-21': { title: 'A Different Game', body: `They took me fishing. I was always glad   
+to follow, play   
+on the islands alone.
+
+The best grew nothing at all.  
+I could stare at the willows on the farther shore,  
+the willows and the mint and the aspen and the logs,
+
+and say,  
+if only I could bathe my dirty feet in clear water,  
+but the wicked witch
+
+forbad me leave.  
+It’s wasteland, said she, flowing with lava  
+enchanted to look like paradise.
+
+Eventually, I’d trust my heart and cross,  
+and—paradise was mine.  
+Now I play a different game.
+
+I am the island.  
+You are the shore. Probably  
+the witch is right.` },
+  'poem-22': { title: 'Destiny', body: `Goatish, I am destined   
+to love you and to lose.   
+To love and to refuse,  
+because your love is not  
+a thing that I can bear.   
+To love, my destiny,  
+and learn it is not love,  
+and it is not you  
+I do not love — that too. 
+
+Your house is glorious,  
+I'm sure, but I won't see.  
+The others’ laugh at me.   
+is my seal of doom,   
+because their laugh at me   
+is mine at you. There’s twisting  
+at the root of me  
+that never will come straight.  
+To know me is to hate.` },
+  'poem-23': { title: 'Refusal to Make a House a Home', body: `*My mind is a great house,*   
+*much larger than I am.*
+
+the old house—large and white and stuffed  
+with overgrown rescue houseplants   
+love i could barely sort of feel  
+where i wrote
+
+*The greatest art is the art of sorrow and the people who know it.*    
+*The deepest truth is sorrow.*  
+*The greatest heroes plumb sorrow to its depth and stand strong against it.*  
+*The poor in spirit outnumber the rich tenfold.*  
+*Joy is a stranger to the world.*
+
+gluttonous home is a sunny place sunny   
+with my insensate provoking reflexive jabbering nothing   
+gets done at home for home is not engaged or rational  
+it is honeycombed by doubt-bees (doubt-bees  
+are not home) home itches inertially 
+
+*Joy smiles on us, laughs over us, yes.*  
+*Sometimes he'll stay a week, a month, a year, a decade.*  
+*Always, in the end, he returns Home—*
+
+home a heap   
+of extra obsessions the gateway   
+to narnia otherwise   
+why bother  
+sure i admit it’s better   
+than any other *real* place i’ve been
+
+*—Home,*  
+*that place, golden in the sunset,*   
+*where the not only the brightest*   
+*but the deepest truth*
+*is the truth of Joy—*` },
+  'poem-24': { title: 'To the Author-god', body: `All voices are your voice. Not even I  
+exist—you wrote my thoughts, a minor move  
+well made. Omnipotent, you need not prove  
+your skill—you play so endless day may fly  
+a little faster. Yes, you’re governed by  
+the rules you set: for logic must approve  
+each play, and nature too, and to remove  
+one bit from your intent’s to fall awry  
+of all—an easy game, and yet less dull  
+than, lonely, contemplating your lone mind.  
+The world’s a poem. If I knew each thought  
+that swam each soul, each flower blooming full  
+today, tomorrow gone--in all I’d find  
+the form. The matter we know not.` },
+  'poem-25': { title: 'More', body: `and metaphor  
+so careful and passionate
+
+that they will forgive  
+(may it be so\!)  
+the rainbows  
+and the dazzling
+
+that  
+(if only it could be so\!)  
+readers   
+will feel  
+and not just  
+dismiss  
+with a name
+
+You-that-is-*more*.` },
+  'poem-26': { title: 'Sleepers Awake', body: `She crawls under mildewed covers,  
+frost flaking off, to lift   
+the filigreed silver box   
+with its pink stone heart  
+resting in gold balm.
+
+She winds the key,  
+and the carved cupid, twirling to a twinkling tune,   
+rises over her, scattering dried rose petals.
+
+He breathes the heart on fire, bares   
+her chest, and parts the bone.  
+He does not heed her screams 
+
+as, hands sticky with blood and balm,  
+he seals the flaming heart   
+inside her—
+
+the tune slows,   
+and Cupid   
+dissolves on the draft.   
+Aflame with joy and agony, she rises.  
+There is no house,   
+only thawing ground.` },
+  'poem-27': { title: 'Discord DMs', body: `but many lovers of serious sparkles
+(Tolkien, e.g.) despise silly sparkles
+(Disney, diminutive Victorian fairies)
+and I don’t always even
+notice the distinctions
+
+“perhaps you idiosyncratically call Tolkien
+sparkles”
+
+yes
+probably
+because what people regard as
+real, deep, serious sublime
+strikes me as at
+least as fake as
+the other thing,
+whereas proponents of it find it to be real
+while the other thing is fake
+
+“burn”
+
+and I still would have both over reality-as-I perceive-
+it any day` },
+  'poem-28': { title: 'GFL', body: `So, the curious literary phenomenon  
+that is Godlike Fairy Lover  
+started when I was thirteen —  
+*a* god, then, and a goddess, too,  
+copper of hair and eye.
+
+They shrank into  
+a twilight healer  
+between man and god,  
+became incarnate as a telepath —
+
+that was for winter. For spring,  
+rainbows and sunlight,  
+a Piper. Summer —  
+pure gold,   
+a statue,  
+once.
+
+He tried to lure mortal girls away,   
+and they turned him down,   
+and regretted it ever after, until  
+he returned or didn’t —  
+I never got that far.
+
+Away, you ask? To heaven,   
+probably.  
+   
+(Though I did,   
+that one time,  
+trying to sleep,   
+ask myself  
+“What if he were here?  
+Now?” and my brain replied:  
+“Those yellow curls hide  
+glowing red eyes.”)
+
+I couldn’t write without him in it.  
+He kept thinking   
+he was God. He sounded fae. And so.  
+`}
+ 
 };
 
 export const BROOM_CLOSET_KEY_SPOTS: Spot[] = [

@@ -635,4 +635,4 @@ export async function enterRoom(room: RoomSpec): Promise<void> {
   updateList();
 }
 // Choices at present: CHILDRENS_BEDROOM, MASTER_BATHROOM, BROOM_CLOSET, SPARE_ROOM, BALCONY, LADY_BATHROOM, MASTER_BEDROOM
-enterRoom(ROOMS[0]);
+enterRoom(ROOMS[2]);

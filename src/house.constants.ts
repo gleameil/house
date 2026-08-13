@@ -330,23 +330,25 @@ export const POEM_CONTENT: Record<string, { title: string; body: string }> = {
 };
 
 export const BROOM_CLOSET_KEY_SPOTS: Spot[] = [
-  { x: 0.06, y: 0.20, width: 0.03 },
-  { x: 0.16, y: 0.28, width: 0.03, rotation: 15 },
-  { x: 0.04, y: 0.36, width: 0.03, rotation: -12 },
-  { x: 0.18, y: 0.46, width: 0.03 },
-  { x: 0.06, y: 0.55, width: 0.03, rotation: 20 },
-  { x: 0.16, y: 0.64, width: 0.03 },
-  { x: 0.04, y: 0.72, width: 0.03, rotation: -18 },
-  { x: 0.60, y: 0.20, width: 0.03, rotation: 10 },
-  { x: 0.62, y: 0.32, width: 0.03 },
-  { x: 0.59, y: 0.44, width: 0.03, rotation: -15 },
-  { x: 0.61, y: 0.56, width: 0.03 },
-  { x: 0.58, y: 0.68, width: 0.03, rotation: 12 },
+  { x: 0.223, y: 0.92, width: 0.02 },
+  { x: 0.26, y: 0.10, width: 0.02 },
+  { x: 0.26, y: 0.72, width: 0.02 },
+  { x: 0.29, y: 0.18, width: 0.02, rotation: 15 },
+  { x: 0.31, y: 0.37, width: 0.02, rotation: -12 },
+  { x: 0.31, y: 0.10, width: 0.02 },
+  { x: 0.36, y: 0.55, width: 0.02, rotation: 20 },
+  { x: 0.37, y: 0.64, width: 0.02 },
+  { x: 0.37, y: 0.42, width: 0.02, rotation: -18 },
+  { x: 0.58, y: 0.68, width: 0.02, rotation: 12 },
+  { x: 0.61, y: 0.20, width: 0.02, rotation: 10 },
+  { x: 0.61, y: 0.56, width: 0.02 },
+  { x: 0.62, y: 0.32, width: 0.02 },
+  { x: 0.625, y: 0.44, width: 0.02, rotation: 10 },  
 ];
 
 export const SPARE_ROOM_KEY_SPOTS: Spot[] = [
-  { x: 0.24, y: 0.18, width: 0.03, rotation: 8 },
-  { x: 0.20, y: 0.45, width: 0.03, rotation: -10 },
+  { x: 0.25, y: 0.18, width: 0.015, rotation: 8 },
+  { x: 0.36, y: 0.45, width: 0.015, rotation: -5 },
 ];
 
 export const CHILDRENS_BEDROOM_KEY_SPOTS: Spot[] = [
@@ -355,16 +357,16 @@ export const CHILDRENS_BEDROOM_KEY_SPOTS: Spot[] = [
 ];
 
 export const BROOM_CLOSET_PAPER_SPOTS: Spot[] = [
-  { x: 0.30, y: 0.80, width: 0.045, rotation: 12 },
-  { x: 0.20, y: 0.90, width: 0.045, rotation: -10 },
-  { x: 0.33, y: 0.68, width: 0.04 },
+  { x: 0.383, y: 0.115, width: 0.045, rotation: 12 },
+  { x: 0.20, y: 0.995, width: 0.045, rotation: -10 },
+  { x: 0.51, y: 0.965, width: 0.04 },
 ];
 
 export const SPARE_ROOM_PAPER_SPOTS: Spot[] = [
-  { x: 0.20, y: 0.62, width: 0.045, rotation: 15 },
+  { x: 0.22, y: 0.69, width: 0.038, rotation: 15 },
   { x: 0.35, y: 0.78, width: 0.045, rotation: -10 },
   { x: 0.50, y: 0.70, width: 0.045 },
-  { x: 0.65, y: 0.60, width: 0.045, rotation: 20 },
+  { x: 0.65, y: 0.59, width: 0.04, rotation: 20 },
   { x: 0.45, y: 0.90, width: 0.045, rotation: -25 },
   { x: 0.25, y: 0.92, width: 0.04, rotation: 8 },
 ];

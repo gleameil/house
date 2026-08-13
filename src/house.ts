@@ -24,11 +24,17 @@ import {
   COUNTABLE_KINDS,
   NamedSpec,
   AlmondSpec,
+  KeySpec,
+  PaperSpec,
   AnyHiddenObjectSpec,
   BUNNY_LIVE_IMAGE,
+  ROAR_SOUND,
+  MUSIC_BOX_SOUND,
+  POEM_CONTENT,
 } from './house.constants';
 
-const ALMOND_MESSAGE_PLACEHOLDER = '[a message not yet written]';
+const FOUND_MESSAGE_PLACEHOLDER = '[a message not yet written]';
+const POEM_PLACEHOLDER = { title: '(untitled)', body: 'No poem has been placed here yet.' };
 
 interface LiveObject {
   spec: AnyHiddenObjectSpec;
@@ -210,15 +216,54 @@ function missRipple(clientX: number, clientY: number): void {
   ripple.addEventListener('animationend', () => ripple.remove());
 }
 
-function showAlmondMessage(obj: LiveObject): void {
+function showFoundMessage(obj: LiveObject, message: string): void {
   const rect = layoutRect(obj);
   const bubble = document.createElement('div');
   bubble.className = 'house almond-message';
   bubble.style.left = `${rect.cx}px`;
   bubble.style.top = `${rect.top}px`;
-  bubble.textContent = (obj.spec as AlmondSpec).message || ALMOND_MESSAGE_PLACEHOLDER;
+  bubble.textContent = message || FOUND_MESSAGE_PLACEHOLDER;
   document.body.appendChild(bubble);
   bubble.addEventListener('animationend', () => bubble.remove());
+}
+
+function openPaperModal(obj: LiveObject): void {
+  const poem = POEM_CONTENT[(obj.spec as PaperSpec).poemId] ?? POEM_PLACEHOLDER;
+  state.cutscenePlaying = true;
+
+  const overlay = document.createElement('div');
+  overlay.className = 'house';
+  overlay.id = 'paper-overlay';
+
+  const card = document.createElement('div');
+  card.id = 'paper-card';
+
+  const closeButton = document.createElement('button');
+  closeButton.id = 'paper-close';
+  closeButton.type = 'button';
+  closeButton.setAttribute('aria-label', 'Close');
+  closeButton.textContent = '×';
+
+  const title = document.createElement('h2');
+  title.textContent = poem.title;
+
+  const body = document.createElement('p');
+  body.textContent = poem.body;
+
+  card.append(closeButton, title, body);
+  overlay.appendChild(card);
+  document.body.appendChild(overlay);
+
+  const close = () => {
+    overlay.remove();
+    state.cutscenePlaying = false;
+  };
+  closeButton.addEventListener('click', close);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
+
+  requestAnimationFrame(() => overlay.classList.add('visible'));
 }
 
 // ------------------------------------------------------------- find flow --
@@ -281,8 +326,11 @@ function updateList(): void {
 // objects do something extra on click, on top of the normal find-fade.
 // Each flourish returns how many ms to hold the fade off for, so the
 // flourish plays to completion before the object starts disappearing.
-// Sound-driven ones (dinosaur roar, music box tune) have no audio asset
-// yet — these are visual-only stand-ins until one exists.
+
+function playSound(src: string): void {
+  const audio = new Audio(src);
+  audio.play().catch(() => {}); // autoplay can be blocked; not worth surfacing
+}
 
 const FLOURISHES: Record<string, (obj: LiveObject) => number> = {
   'bunny-toy': flourishBunny,
@@ -304,6 +352,7 @@ function flourishBunny(obj: LiveObject): number {
 }
 
 function flourishDinosaur(obj: LiveObject): number {
+  playSound(ROAR_SOUND);
   obj.element.classList.add('flourish-roar');
   window.setTimeout(() => obj.element.classList.remove('flourish-roar'), 650);
   return 650;
@@ -328,6 +377,7 @@ function flourishFairy(obj: LiveObject): number {
 }
 
 function flourishMusicBox(obj: LiveObject): number {
+  playSound(MUSIC_BOX_SOUND);
   obj.element.classList.add('flourish-wiggle');
   const rect = layoutRect(obj);
   ['♪', '♫', '♪'].forEach((glyph, i) => {
@@ -365,7 +415,9 @@ function find(obj: LiveObject): void {
     );
     updateList();
 
-    if (obj.spec.kind === 'almond') showAlmondMessage(obj);
+    if (obj.spec.kind === 'almond') showFoundMessage(obj, (obj.spec as AlmondSpec).message);
+    if (obj.spec.kind === 'key') showFoundMessage(obj, (obj.spec as KeySpec).message);
+    if (obj.spec.kind === 'paper') openPaperModal(obj);
 
     const f = fusionFor(obj);
     if (f && !state.fusionsDone.has(f.id)) {

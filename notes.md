@@ -16,9 +16,11 @@ find-and-replace through room definitions.
 - [ ] Key found → show text (placeholder/lookup approach) — **sequenced after** placing key objects into rooms, see bucket B; no key objects exist yet to attach this to
 
 ### B. Buildable now with placeholders, but bigger — needs a bit more design first
-- [ ] **Place `paper` and `key` objects + real spot pools into broom closet, spare room, and children's bedroom** (master bathroom already has its almonds; per the resolved concentration rule, spare room gets the most `paper`, broom closet the most `key`). None of these exist in any room yet — this is new placement, not rewiring. Room *i* ↔ `key1`–`key5` for the unlock pair; extra keys can reuse any asset as flavor. `poemId` on `paper` objects can be a placeholder id for now.
+- [x] **Key and paper placement — done, 2026-08-12.** All 16 keys from `key_message-opens-asset-foundIn.csv` are placed except key13 (its "Found in" is `n/a` — it's tied to `/in/`'s Jennie's room, not a house room; not placed anywhere in house/ code, see the comment above its would-be spot in `house.constants.ts`): 12 in broom closet, 2 in spare room, 1 in children's bedroom, matching the CSV's `Found in` column and the earlier concentration decision. Each key's `message` and `roomId` (its unlock *target*, not where it's found) come straight from the CSV; most targets don't exist yet (the ~13-room vision), which is expected and fine. Placement is grounded in the actual art, not random — I looked at each room background directly: broom closet keys hang along both side walls like a pegboard, children's bedroom's key hangs off a bedpost knob that's already drawn like a peg, spare room's two are near the closet doorway. 10 placeholder papers are placed too (spare room 5, broom closet 2, master bathroom 2, children's bedroom 1 — no CSV existed for these; distribution is per Nora's verbal direction, "most poems, not picky which"), resting on floor/rug areas rather than floating. **Poem content is still 100% placeholder** (`POEM_CONTENT` in `house.constants.ts`) — the real poem list she has isn't in the repo yet; swapping it in means editing that one table, same placeholder-swap pattern as everything else this session.
+- [x] **Paper click → poem modal — done, 2026-08-12.** Clicking a paper opens a centered modal card with the poem's title/body, closable via an × button or by clicking outside the card; blocks room clicks while open (same `cutscenePlaying` flag as the fusion cutscene). Verified both close paths work.
+- [x] **Real audio for dinosaur roar and music box — done, 2026-08-12**, once Nora added `roar.mp3` / `musicBox.mp3`. Visual flourishes (shake, floating note glyphs) kept alongside the sound rather than replaced.
 - [ ] Mouse mechanic: running animation, accepts almond → drops correct scrap, scrap shown via text-particle effect (biggest single unbuilt piece; see `CLAUDE.md` Known Debt #1)
-- [ ] Key → unlock correct room (`KeySpec.roomId` already exists in the type; needs the actual gating logic plus a real room-to-room flow, replacing the current dev cycle-through) — depends on the placement task above
+- [ ] Key → unlock correct room (`KeySpec.roomId` now exists and is populated; still needs the actual gating logic plus a real room-to-room flow, replacing the current dev cycle-through) — placement is done, this is the remaining half
 - [ ] "Almonds are for feeding mice" needs to read clearly to a first-time player — thought bubble on the mouse? On the almond? (small UX task, not just code)
 
 ### C. Resolved 2026-08-12
@@ -30,7 +32,9 @@ find-and-replace through room definitions.
 ### D. Content/creative — Nora
 - [ ] Draw the room-navigation map
 - [ ] Spare room art (more needed)
-- [ ] The poem–almond–key–message CSV (whenever it's ready today)
+- [x] **Key CSV** (`key_message-opens-asset-foundIn.csv`, in the repo root) → consumed for key placement, 2026-08-12 (see bucket B). Nora flagged a first version as "wrong and incomplete" and replaced it same day — the version now in the repo is the one placement was built from.
+- [ ] **Almonds CSV** (mouse → scrap mapping): downloaded but not yet in the repo. Not needed until the mouse mechanic exists (bucket B) — correctly sequenced, nothing blocked on it.
+- [ ] **Real poem content**: no papers/poems CSV has landed in the repo — paper placement (bucket B) used 10 placeholder slots instead. Most poems need to be fished out of `writing/` / *Sleepers Awake* (February); one, "Discord DMs," is in the newly-added `writing/SongsAndUnholySonnets2KDP.pdf`. Say if you want a Claude pass at compiling candidates once you're ready.
 - [ ] Gather candidate source material for one-off found books/poems: *Of the Abandoned*? *Sleepers Awake* / February? *This Thing*? Poems in `/in/`? (untouched since original note — say if you want a Claude pass at compiling candidates from any of these)
 
 ### E. Bigger and explicitly deferred past today unless you want to open it

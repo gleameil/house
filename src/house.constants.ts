@@ -19,8 +19,8 @@ import key11 from 'url:../assets/key11.png';
 import key12 from 'url:../assets/key12.png';
 import key13 from 'url:../assets/key13.png';
 import key14 from 'url:../assets/key14.png';
-import key15 from 'url:../assets/key16.png';
-import key16 from 'url:../assets/key17.png';
+import key15 from 'url:../assets/key15.png';
+import key16 from 'url:../assets/key16.png';
 
 import scribble1 from 'url:../assets/scribble1.png';
 import scribble2 from 'url:../assets/scribble2.png';
@@ -54,6 +54,8 @@ import scribble29 from 'url:../assets/scribble29.png';
 import mouse from 'url:../assets/mouse.png';
 import paper from 'url:../assets/paper.png';
 import heart from 'url:../assets/heart.png';
+import roarSound from 'url:../assets/roar.mp3';
+import musicBoxSound from 'url:../assets/musicBox.mp3';
 
 // broom closet
 import roomBroomCloset from 'url:../assets/room-broom-closet.jpg';
@@ -177,6 +179,8 @@ export interface KindMeta {
 }
 
 export const BUNNY_LIVE_IMAGE = bunnyLive;
+export const ROAR_SOUND = roarSound;
+export const MUSIC_BOX_SOUND = musicBoxSound;
 
 export const HIDDEN_OBJECT_KINDS =
   { 
@@ -305,8 +309,76 @@ export interface RoomSpec {
   sharedSpots?: Partial<Record<HiddenObjectKind, Spot[]>>;
 }
 
-export const KEY_SPOTS: Spot[] = []
 export const SCRIBBLE_SPOTS: Spot[] = [];
+
+// Placeholder poem content for `paper` objects, keyed by poemId. Nora's
+// real poem list (mostly from writing/ and Sleepers Awake, one — "Discord
+// DMs" — from writing/SongsAndUnholySonnets2KDP.pdf) isn't compiled yet;
+// swap these out wholesale once it is. Distribution across rooms follows
+// her direction: most in the spare room, 1-3 in each other room.
+export const POEM_CONTENT: Record<string, { title: string; body: string }> = {
+  'poem-1': { title: '(untitled)', body: 'This paper hasn’t found its poem yet.' },
+  'poem-2': { title: '(untitled)', body: 'This paper hasn’t found its poem yet.' },
+  'poem-3': { title: '(untitled)', body: 'This paper hasn’t found its poem yet.' },
+  'poem-4': { title: '(untitled)', body: 'This paper hasn’t found its poem yet.' },
+  'poem-5': { title: '(untitled)', body: 'This paper hasn’t found its poem yet.' },
+  'poem-6': { title: '(untitled)', body: 'This paper hasn’t found its poem yet.' },
+  'poem-7': { title: '(untitled)', body: 'This paper hasn’t found its poem yet.' },
+  'poem-8': { title: '(untitled)', body: 'This paper hasn’t found its poem yet.' },
+  'poem-9': { title: '(untitled)', body: 'This paper hasn’t found its poem yet.' },
+  'poem-10': { title: '(untitled)', body: 'This paper hasn’t found its poem yet.' },
+};
+
+export const BROOM_CLOSET_KEY_SPOTS: Spot[] = [
+  { x: 0.06, y: 0.20, width: 0.03 },
+  { x: 0.16, y: 0.28, width: 0.03, rotation: 15 },
+  { x: 0.04, y: 0.36, width: 0.03, rotation: -12 },
+  { x: 0.18, y: 0.46, width: 0.03 },
+  { x: 0.06, y: 0.55, width: 0.03, rotation: 20 },
+  { x: 0.16, y: 0.64, width: 0.03 },
+  { x: 0.04, y: 0.72, width: 0.03, rotation: -18 },
+  { x: 0.60, y: 0.20, width: 0.03, rotation: 10 },
+  { x: 0.62, y: 0.32, width: 0.03 },
+  { x: 0.59, y: 0.44, width: 0.03, rotation: -15 },
+  { x: 0.61, y: 0.56, width: 0.03 },
+  { x: 0.58, y: 0.68, width: 0.03, rotation: 12 },
+];
+
+export const SPARE_ROOM_KEY_SPOTS: Spot[] = [
+  { x: 0.24, y: 0.18, width: 0.03, rotation: 8 },
+  { x: 0.20, y: 0.45, width: 0.03, rotation: -10 },
+];
+
+export const CHILDRENS_BEDROOM_KEY_SPOTS: Spot[] = [
+  // the bedpost knobs read as pegs already
+  { x: 0.15, y: 0.45, width: 0.025, rotation: -90 },
+];
+
+export const BROOM_CLOSET_PAPER_SPOTS: Spot[] = [
+  { x: 0.30, y: 0.80, width: 0.045, rotation: 12 },
+  { x: 0.20, y: 0.90, width: 0.045, rotation: -10 },
+  { x: 0.33, y: 0.68, width: 0.04 },
+];
+
+export const SPARE_ROOM_PAPER_SPOTS: Spot[] = [
+  { x: 0.20, y: 0.62, width: 0.045, rotation: 15 },
+  { x: 0.35, y: 0.78, width: 0.045, rotation: -10 },
+  { x: 0.50, y: 0.70, width: 0.045 },
+  { x: 0.65, y: 0.60, width: 0.045, rotation: 20 },
+  { x: 0.45, y: 0.90, width: 0.045, rotation: -25 },
+  { x: 0.25, y: 0.92, width: 0.04, rotation: 8 },
+];
+
+export const MASTER_BATHROOM_PAPER_SPOTS: Spot[] = [
+  { x: 0.10, y: 0.70, width: 0.045 },
+  { x: 0.20, y: 0.80, width: 0.045, rotation: 20 },
+  { x: 0.06, y: 0.85, width: 0.04, rotation: -15 },
+];
+
+export const CHILDRENS_BEDROOM_PAPER_SPOTS: Spot[] = [
+  { x: 0.62, y: 0.72, width: 0.045, rotation: 10 },
+  { x: 0.70, y: 0.62, width: 0.045 },
+];
 
 export const MASTER_BATHROOM_ALMOND_SPOTS: Spot[] = [
   { x: 0.03, y: 0.29, width: 0.008 },
@@ -662,8 +734,11 @@ const CHILDRENS_BEDROOM: RoomSpec = {
       spots: [
         {x: 0.489, y: 0.465, width: 0.031, rotation: -20},
         {x: 0.299, y: 0.865, width: 0.041 }
-      ] 
-    }
+      ]
+    },
+    // 1 of 16 keys is found here (opens Throne room — doesn't exist yet)
+    { id: 'key-15', kind: 'key', image: key15, message: "The physics of this world is symbol, not law.", roomId: 'throne-room' },
+    { id: 'paper-10', kind: 'paper', image: paper, poemId: 'poem-10' },
   ],
   fusions: [
     {
@@ -675,8 +750,12 @@ const CHILDRENS_BEDROOM: RoomSpec = {
       restoredSpot: { x: 0.328, y: 0.63, width: 0.048 },
     },
   ],
-  sharedSpots: { almond: CHILDRENS_BEDROOM_ALMOND_SPOTS },
-}; // doll bodies, ragged doll head
+  sharedSpots: {
+    almond: CHILDRENS_BEDROOM_ALMOND_SPOTS,
+    key: CHILDRENS_BEDROOM_KEY_SPOTS,
+    paper: CHILDRENS_BEDROOM_PAPER_SPOTS,
+  },
+}; // doll bodies, ragged doll head, 1 key, 1 paper
 const MASTER_BATHROOM: RoomSpec = {
   id: 'master-bathroom',
   name: "the master bathroom",
@@ -1025,10 +1104,17 @@ const MASTER_BATHROOM: RoomSpec = {
       message: 'in poems you\'re allowed to say what you feel but don\'t believe',
       image: almond1,
     },
+    // no keys here — the CSV places all 16 keys in broom closet/spare room/
+    // bedroom; this room's key-shaped gap is key12's *target*, not its home
+    { id: 'paper-8', kind: 'paper', image: paper, poemId: 'poem-8' },
+    { id: 'paper-9', kind: 'paper', image: paper, poemId: 'poem-9' },
   ], // named: toilet paper tube, soap, toothpaste, toothbrush, razor, cockroach, mirror, Ken, breath mint?, deodorant (brand: Sansfoy), towel, loofah, underwear (men's), toilet brush, spary cleaner, underwear (women's), locket?, mop, tapestry-equivalent, barbell, gauntlet, lighter
   fusions: [],
-  sharedSpots: { almond: MASTER_BATHROOM_ALMOND_SPOTS },
-}; // almonds, guy doll head, evil doll head
+  sharedSpots: {
+    almond: MASTER_BATHROOM_ALMOND_SPOTS,
+    paper: MASTER_BATHROOM_PAPER_SPOTS,
+  },
+}; // almonds, guy doll head, evil doll head, papers
 const BROOM_CLOSET: RoomSpec = {
   id: 'broom-closet',
   name: 'the broom closet',
@@ -1264,11 +1350,35 @@ const BROOM_CLOSET: RoomSpec = {
         { x: 0.5, y: 0.11, width: 0.04, rotation: 90 },
         { x: 0.33, y: 0.986, width: 0.04 }
       ]
-    }
-  ], // paper towels, toilet paper, plunger, sponge, mop, rag, bug, spider, cleaner in spray bottle,  vacuum, note to self, matches, extension cord, screw, nail, can (intact), can (crushed)
+    },
+    // 12 of the 16 keys are found here, per key_message-opens-asset-foundIn.csv.
+    // key13 ("Consider who's speaking") isn't placed in any house room — its
+    // CSV entry ties it to /in/'s Jennie's room instead, which house/ has no
+    // connection to yet (see CLAUDE.md Known Debt #7). roomId is the target
+    // the key *opens*; most target rooms don't exist yet (~13-room vision),
+    // so roomId is left as-is even where it names a room not in ROOMS.
+    { id: 'key-12', kind: 'key', image: key12, message: "What do you learn from the difficulty", roomId: 'master-bathroom' },
+    { id: 'key-5', kind: 'key', image: key5, message: "How does it make you feel?", roomId: 'lady-bathroom' },
+    { id: 'key-3', kind: 'key', image: key3, message: "Is anything funny?", roomId: 'jordan-room' },
+    { id: 'key-4', kind: 'key', image: key4, message: "Do you want it to be happy or sad?", roomId: 'lady-bedroom' },
+    { id: 'key-6', kind: 'key', image: key6, message: "What is the shape of events?" },
+    { id: 'key-1', kind: 'key', image: key1, message: "What other art does it speak to?", roomId: 'master-bedroom' },
+    { id: 'key-8', kind: 'key', image: key8, message: "How do different parts speak to each other?", roomId: 'spare-room' },
+    { id: 'key-9', kind: 'key', image: key9, message: "What styles of art and writing are here?", roomId: 'artists-studio' },
+    { id: 'key-16', kind: 'key', image: key16, message: "Find one theme and follow it all the way through", roomId: 'kitchen' },
+    { id: 'key-11', kind: 'key', image: key11, message: "What does it teach you?", roomId: 'chapel' },
+    { id: 'key-10', kind: 'key', image: key10, message: "Is it true?", roomId: 'basement' },
+    { id: 'key-7', kind: 'key', image: key7, message: "Do you think it is good?", roomId: 'entryway' },
+    { id: 'paper-6', kind: 'paper', image: paper, poemId: 'poem-6' },
+    { id: 'paper-7', kind: 'paper', image: paper, poemId: 'poem-7' },
+  ], // paper towels, toilet paper, plunger, sponge, mop, rag, bug, spider, cleaner in spray bottle,  vacuum, note to self, matches, extension cord, screw, nail, can (intact), can (crushed), keys, papers
   fusions: [],
-  sharedSpots: { almond: BROOM_CLOSET_ALMOND_SPOTS },
-}; // keys, gorilla leg, plus size doll head
+  sharedSpots: {
+    almond: BROOM_CLOSET_ALMOND_SPOTS,
+    key: BROOM_CLOSET_KEY_SPOTS,
+    paper: BROOM_CLOSET_PAPER_SPOTS,
+  },
+}; // gorilla leg, plus size doll head
 const SPARE_ROOM: RoomSpec = {
   id: 'spare-room',
   name: 'the spare room',
@@ -1495,10 +1605,22 @@ const SPARE_ROOM: RoomSpec = {
       message: 'In love with Beyond',
       image: almond2,
     },
+    // 2 of 16 keys are found here (opens Children's room / Balcony)
+    { id: 'key-2', kind: 'key', image: key2, message: "How is it beautiful?", roomId: 'bedroom' },
+    { id: 'key-14', kind: 'key', image: key14, message: "Find one image and follow it all the way through", roomId: 'balcony' },
+    { id: 'paper-1', kind: 'paper', image: paper, poemId: 'poem-1' },
+    { id: 'paper-2', kind: 'paper', image: paper, poemId: 'poem-2' },
+    { id: 'paper-3', kind: 'paper', image: paper, poemId: 'poem-3' },
+    { id: 'paper-4', kind: 'paper', image: paper, poemId: 'poem-4' },
+    { id: 'paper-5', kind: 'paper', image: paper, poemId: 'poem-5' },
   ],
   fusions: [],
-  sharedSpots: { almond: SPARE_ROOM_ALMOND_SPOTS },
-}; // scrawls, christy doll head, Seraphina
+  sharedSpots: {
+    almond: SPARE_ROOM_ALMOND_SPOTS,
+    key: SPARE_ROOM_KEY_SPOTS,
+    paper: SPARE_ROOM_PAPER_SPOTS,
+  },
+}; // christy doll head, Seraphina, keys, papers (most papers land here)
 const BALCONY: RoomSpec = {
   id: 'balcony',
   name: 'the balcony',

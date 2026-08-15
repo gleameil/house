@@ -22,35 +22,6 @@ import key14 from 'url:../assets/key14.png';
 import key15 from 'url:../assets/key15.png';
 import key16 from 'url:../assets/key16.png';
 
-import scribble1 from 'url:../assets/scribble1.png';
-import scribble2 from 'url:../assets/scribble2.png';
-import scribble3 from 'url:../assets/scribble3.png';
-import scribble4 from 'url:../assets/scribble4.png';
-import scribble5 from 'url:../assets/scribble5.png';
-import scribble6 from 'url:../assets/scribble6.png';
-import scribble7 from 'url:../assets/scribble7.png';
-import scribble8 from 'url:../assets/scribble8.png';
-import scribble9 from 'url:../assets/scribble9.png';
-import scribble10 from 'url:../assets/scribble10.png';
-import scribble11 from 'url:../assets/scribble11.png';
-import scribble12 from 'url:../assets/scribble12.png';
-import scribble14 from 'url:../assets/scribble14.png';
-import scribble15 from 'url:../assets/scribble15.png';
-import scribble16 from 'url:../assets/scribble16.png';
-import scribble17 from 'url:../assets/scribble17.png';
-import scribble18 from 'url:../assets/scribble18.png';
-import scribble19 from 'url:../assets/scribble19.png';
-import scribble20 from 'url:../assets/scribble20.png';
-import scribble21 from 'url:../assets/scribble21.png';
-import scribble22 from 'url:../assets/scribble22.png';
-import scribble23 from 'url:../assets/scribble23.png';
-import scribble24 from 'url:../assets/scribble24.png';
-import scribble25 from 'url:../assets/scribble25.png';
-import scribble26 from 'url:../assets/scribble26.png';
-import scribble27 from 'url:../assets/scribble27.png';
-import scribble28 from 'url:../assets/scribble28.png';
-import scribble29 from 'url:../assets/scribble29.png';
-
 import mouse from 'url:../assets/mouse.png';
 import paper from 'url:../assets/paper.png';
 import heart from 'url:../assets/heart.png';
@@ -110,6 +81,35 @@ import seraphina from 'url:../assets/seraphina.png';
 
 // balcony
 import roomBalcony from 'url:../assets/room-balcony.jpg';
+import scribble1 from 'url:../assets/scribble1.png';
+import scribble2 from 'url:../assets/scribble2.png';
+import scribble3 from 'url:../assets/scribble3.png';
+import scribble4 from 'url:../assets/scribble4.png';
+import scribble5 from 'url:../assets/scribble5.png';
+import scribble6 from 'url:../assets/scribble6.png';
+import scribble7 from 'url:../assets/scribble7.png';
+import scribble8 from 'url:../assets/scribble8.png';
+import scribble9 from 'url:../assets/scribble9.png';
+import scribble10 from 'url:../assets/scribble10.png';
+import scribble11 from 'url:../assets/scribble11.png';
+import scribble12 from 'url:../assets/scribble12.png';
+import scribble14 from 'url:../assets/scribble14.png';
+import scribble15 from 'url:../assets/scribble15.png';
+import scribble16 from 'url:../assets/scribble16.png';
+import scribble17 from 'url:../assets/scribble17.png';
+import scribble18 from 'url:../assets/scribble18.png';
+import scribble19 from 'url:../assets/scribble19.png';
+import scribble20 from 'url:../assets/scribble20.png';
+import scribble21 from 'url:../assets/scribble21.png';
+import scribble22 from 'url:../assets/scribble22.png';
+import scribble23 from 'url:../assets/scribble23.png';
+import scribble24 from 'url:../assets/scribble24.png';
+import scribble25 from 'url:../assets/scribble25.png';
+import scribble26 from 'url:../assets/scribble26.png';
+import scribble27 from 'url:../assets/scribble27.png';
+import scribble28 from 'url:../assets/scribble28.png';
+import scribble29 from 'url:../assets/scribble29.png';
+import dorisDoll from 'url:../assets/doris.png';
 
 // child's bedroom
 import roomBedroom from 'url:../assets/room-bedroom.jpg';
@@ -1749,8 +1749,8 @@ const BROOM_CLOSET: RoomSpec = {
       kind: 'named',
       image: handVacuum,
       spots: [
-        { x: 0.435, y: 0.4, width: 0.1, rotation: -90 },
-        { x: 0.62, y: 0.95, width: 0.1, rotation: 97 }
+        { x: 0.435, y: 0.4, width: 0.13, rotation: -90 },
+        { x: 0.62, y: 0.95, width: 0.13, rotation: 97 }
       ]
     },
     {
@@ -2209,6 +2209,19 @@ const BALCONY: RoomSpec = {
   background: roomBalcony,
   aspectRatio: 1920 / 1080,
   objects: [
+    {
+      id: 'fatuous-doll',
+      name: 'the fatuous doll',
+      kind: 'named',
+      image: dorisDoll,
+      spots: [
+        { x: 0.04, y: 0.98, width: 0.054, rotation: 20 },
+        { x: 0.3, y: 0.98, width: 0.054, rotation: 168 },
+        { x: 0.83, y: 0.98, width: 0.054, rotation: -30 },
+        { x: 0.13, y: 0.48, width: 0.054, rotation: 90 },
+        { x: 0.96, y: 0.99, width: 0.054, rotation: 195 },
+      ]
+    },
     {
       id: 'scribble-1',
       kind: 'scrap',

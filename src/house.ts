@@ -31,6 +31,7 @@ import {
   BUNNY_LIVE_IMAGE,
   ROAR_SOUND,
   MUSIC_BOX_SOUND,
+  PICTURE_RESTORED_IMAGE,
   POEM_CONTENT,
 } from './house.constants';
 import { renderMarkdown } from './markdown';
@@ -388,6 +389,7 @@ const FLOURISHES: Record<string, (obj: LiveObject) => number> = {
   fairy: flourishFairy,
   'music-box': flourishMusicBox,
   mirror: flourishMirror,
+  'broken-picture': flourishPicture,
 };
 
 function flourishBunny(obj: LiveObject): number {
@@ -450,6 +452,29 @@ function flourishMirror(): number {
   state.container!.appendChild(flash);
   flash.addEventListener('animationend', () => flash.remove());
   return 700;
+}
+
+/** Crossfades the broken picture to its restored self and back, without
+ *  touching obj.element (which is about to run the ordinary found-fade).
+ *  A second image is laid directly over it at the same rect and rotation,
+ *  faded in then out via one keyframe animation — a true two-image
+ *  crossfade rather than an instant src swap. Until real restored art
+ *  lands, PICTURE_RESTORED_IMAGE is a duplicate of the broken art, so this
+ *  plays as a no-op flicker; see house.constants.ts. */
+function flourishPicture(obj: LiveObject): number {
+  const rect = layoutRect(obj);
+  const overlay = document.createElement('img');
+  overlay.src = PICTURE_RESTORED_IMAGE;
+  overlay.alt = '';
+  overlay.className = 'house picture-crossfade';
+  overlay.style.left = `${rect.left}px`;
+  overlay.style.top = `${rect.top}px`;
+  overlay.style.width = `${rect.width}px`;
+  overlay.style.height = `${rect.height}px`;
+  overlay.style.transform = obj.spot.rotation ? `rotate(${obj.spot.rotation}deg)` : '';
+  document.body.appendChild(overlay);
+  overlay.addEventListener('animationend', () => overlay.remove());
+  return 2200;
 }
 
 function find(obj: LiveObject): void {

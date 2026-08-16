@@ -42,6 +42,14 @@ body {
     filter 0.9s ease;
 }
 
+.hidden-object.scrap {
+  transition:
+    opacity 0.9s ease,
+    filter 0.9s ease,
+    left 0.38s ease,
+    top 0.38s ease;
+}
+
 .hidden-object.being-found {
   opacity: 0;
   filter: brightness(2) blur(2px);
@@ -392,10 +400,24 @@ body {
   padding-bottom: 0.5rem;
 }
 
-#paper-card p {
-  margin: 0;
+#paper-card .poem-body {
   line-height: 1.7;
-  white-space: pre-wrap;
+}
+
+#paper-card .poem-body p {
+  margin: 0 0 1em;
+}
+
+#paper-card .poem-body p:last-child {
+  margin-bottom: 0;
+}
+
+#paper-card .poem-body em {
+  font-style: italic;
+}
+
+#paper-card .poem-body strong {
+  font-weight: bold;
 }
 
 #paper-close {

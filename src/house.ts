@@ -21,6 +21,7 @@ import {
   Spot,
   HiddenObjectKind,
   HIDDEN_OBJECT_KINDS,
+  KindMeta,
   COUNTABLE_KINDS,
   NamedSpec,
   AlmondSpec,
@@ -32,6 +33,7 @@ import {
   MUSIC_BOX_SOUND,
   POEM_CONTENT,
 } from './house.constants';
+import { renderMarkdown } from './markdown';
 
 const FOUND_MESSAGE_PLACEHOLDER = '[a message not yet written]';
 const POEM_PLACEHOLDER = { title: '(untitled)', body: 'No poem has been placed here yet.' };
@@ -118,15 +120,28 @@ function shuffled<T>(items: T[]): T[] {
   return copy;
 }
 
+/** Fraction-space rectangle in the top-right corner reserved for the
+ *  to-find panel; free-floating spots stay clear of it. */
+const PANEL_EXCLUSION_ZONE = { minX: 0.8, maxY: 0.22 };
+
+/** How close (in spot-fraction units) a candidate spot may land to a point
+ *  being avoided — used to keep the wind from dropping a scrap back under
+ *  the cursor that just clicked one away. */
+const SCRAP_AVOID_RADIUS = 0.06;
+
 /** A free-floating random spot, resampled if it would land in the
  *  to-find panel's top-right corner — the one part of the screen a
- *  fully random position can't be authored away from. */
-function randomSpot(): Spot {
+ *  fully random position can't be authored away from — or, if `avoid` is
+ *  given, too close to that point. */
+function randomSpot(avoid?: { x: number; y: number }): Spot {
   let x: number, y: number;
   do {
     x = Math.random();
     y = Math.random();
-  } while (x > 0.8 && y < 0.22);
+  } while (
+    (x > PANEL_EXCLUSION_ZONE.minX && y < PANEL_EXCLUSION_ZONE.maxY) ||
+    (avoid !== undefined && Math.hypot(x - avoid.x, y - avoid.y) < SCRAP_AVOID_RADIUS)
+  );
   return { x, y, width: 0.04 };
 }
 
@@ -194,6 +209,25 @@ function placeAtSpot(
   element.style.transform = spot.rotation ? `rotate(${spot.rotation}deg)` : '';
 }
 
+/** The balcony's scraps are meant to be blowing in the wind, not sitting
+ *  still once placed: every time one is clicked, the rest drift to a new
+ *  spot. A scrap already near the click point — the one just found, or
+ *  another one stacked near it — is left alone, and no scrap is moved to
+ *  a new spot near the click point either. */
+function reshuffleScraps(clientX: number, clientY: number): void {
+  const roomRect = state.container!.getBoundingClientRect();
+  const avoid = {
+    x: (clientX - roomRect.left) / roomRect.width,
+    y: (clientY - roomRect.top) / roomRect.height,
+  };
+  for (const obj of state.objects) {
+    if (obj.spec.kind !== 'scrap' || obj.found) continue;
+    if (Math.hypot(obj.spot.x - avoid.x, obj.spot.y - avoid.y) < SCRAP_AVOID_RADIUS) continue;
+    obj.spot = randomSpot(avoid);
+    placeAtSpot(obj.element, obj.spot, obj.naturalWidth, obj.naturalHeight);
+  }
+}
+
 function sizeRoomToViewport(): void {
   if (!state.container || !state.room) return;
   const aspect = state.room.aspectRatio;
@@ -217,12 +251,15 @@ function missRipple(clientX: number, clientY: number): void {
 }
 
 function showFoundMessage(obj: LiveObject, message: string): void {
+  const text = message || FOUND_MESSAGE_PLACEHOLDER;
+  console.log(text);
+
   const rect = layoutRect(obj);
   const bubble = document.createElement('div');
   bubble.className = 'house almond-message';
   bubble.style.left = `${rect.cx}px`;
   bubble.style.top = `${rect.top}px`;
-  bubble.textContent = message || FOUND_MESSAGE_PLACEHOLDER;
+  bubble.textContent = text;
   document.body.appendChild(bubble);
   bubble.addEventListener('animationend', () => bubble.remove());
 }
@@ -247,8 +284,9 @@ function openPaperModal(obj: LiveObject): void {
   const title = document.createElement('h2');
   title.textContent = poem.title;
 
-  const body = document.createElement('p');
-  body.textContent = poem.body;
+  const body = document.createElement('div');
+  body.className = 'poem-body';
+  body.innerHTML = renderMarkdown(poem.body);
 
   card.append(closeButton, title, body);
   overlay.appendChild(card);
@@ -283,12 +321,24 @@ function allFound(): boolean {
   );
 }
 
+/** The kind's own display name (e.g. 'paper' -> 'paper ball'), falling
+ *  back to the kind id when no display name is authored (e.g. 'key'). */
+function kindLabel(kind: HiddenObjectKind): string {
+  return (HIDDEN_OBJECT_KINDS[kind] as KindMeta).displayName ?? kind;
+}
+
+/** Strips a leading "the " for alphabetising — the only article that
+ *  shows up across the authored names; see house-briefs/B-bugfix-batch.md. */
+function sortKey(name: string): string {
+  return name.replace(/^the\s+/i, '').toLowerCase();
+}
+
 function updateCounter(kind: HiddenObjectKind) {
   const objectsOfKind = state.objects.filter((o) => o.spec.kind === kind);
   const counter = document.getElementById(`${kind}-count`);
   if (counter && objectsOfKind.length > 0)  {
     const found = objectsOfKind.filter((b) => b.found).length;
-    counter.textContent = `${kind}s — ${found} of ${objectsOfKind.length}`;
+    counter.textContent = `${kindLabel(kind)}s — ${found} of ${objectsOfKind.length}`;
   }
 }
 
@@ -436,6 +486,7 @@ function onRoomClick(event: MouseEvent): void {
     if (obj.found) continue;
     if (hits(obj, event.clientX, event.clientY)) {
       find(obj);
+      if (obj.spec.kind === 'scrap') reshuffleScraps(event.clientX, event.clientY);
       return;
     }
   }
@@ -552,24 +603,34 @@ function buildList(room: RoomSpec): HTMLElement {
   heading.textContent = room.name;
   panel.appendChild(heading);
   const ul = document.createElement('ul');
+
+  // Named objects and fusions share one alphabetised list, sorted by the
+  // name actually shown to the player (article stripped, case-insensitive)
+  // rather than by declaration order — see house-briefs/B-bugfix-batch.md.
+  const entries: { key: string; li: HTMLLIElement }[] = [];
   for (const spec of room.objects) {
     if (spec.kind !== 'named' || spec.partOf) continue;
+    const name = (spec as NamedSpec).name;
     const li = document.createElement('li');
     li.id = `to-find-${spec.id}`;
-    li.textContent = (spec as NamedSpec).name;
-    ul.appendChild(li);
+    li.textContent = name;
+    entries.push({ key: sortKey(name), li });
   }
   for (const f of room.fusions) {
     const li = document.createElement('li');
     li.id = `to-find-fusion-${f.id}`;
-    ul.appendChild(li);
+    entries.push({ key: sortKey(f.name), li });
   }
+  entries.sort((a, b) => a.key.localeCompare(b.key));
+  for (const { li } of entries) ul.appendChild(li);
 
-  COUNTABLE_KINDS.forEach((k) => {
+  const counters = COUNTABLE_KINDS.map((k) => ({ key: kindLabel(k).toLowerCase(), kind: k }));
+  counters.sort((a, b) => a.key.localeCompare(b.key));
+  for (const { kind } of counters) {
     const counterForKind = document.createElement('li');
-    counterForKind.id = `${k}-count`;
+    counterForKind.id = `${kind}-count`;
     ul.appendChild(counterForKind);
-  });
+  }
 
   panel.appendChild(ul);
 
@@ -608,7 +669,7 @@ export async function enterRoom(room: RoomSpec): Promise<void> {
     const element = document.createElement('img');
     element.src = spec.image;
     element.alt = '';
-    element.className = 'hidden-object';
+    element.className = spec.kind === 'scrap' ? 'hidden-object scrap' : 'hidden-object';
     element.draggable = false;
     element.dataset.objectId = spec.id;
     const live: LiveObject = {

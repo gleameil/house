@@ -36,6 +36,7 @@ import {
 import { renderMarkdown } from './markdown';
 import { ensureSchema } from './state/store';
 import { collect, readInventory, recordFound, recordVisit } from './state/inventory';
+import { InventorySlot } from './state/state.constants';
 import { EMPTY_ROOM_STATE } from './state/state.constants';
 
 const FOUND_MESSAGE_PLACEHOLDER = '[a message not yet written]';
@@ -509,6 +510,33 @@ function flourishMirror(): number {
   return 700;
 }
 
+/** What, if anything, a found object puts in the player's pockets.
+ *
+ *  Named one-offs put nothing there — tidying the plunger away is the whole
+ *  of that transaction. The repeating kinds are the ones that accumulate, and
+ *  a paper is carried as its POEM, not as the ball it was crumpled into.
+ *
+ *  The ids written here are the ids /in/ will match on, so they are the object
+ *  ids exactly as authored: `key-1`…`key-16`, hyphenated. (`key-13` is absent
+ *  from the house on purpose — it is found in Jennie's room in /in/, which
+ *  grants it with grantKeys().) */
+function inventoryEntryFor(
+  spec: AnyHiddenObjectSpec,
+): { slot: InventorySlot; id: string } | null {
+  switch (spec.kind) {
+    case 'key':
+      return { slot: 'keys', id: spec.id };
+    case 'almond':
+      return { slot: 'almonds', id: spec.id };
+    case 'paper':
+      return { slot: 'papers', id: (spec as PaperSpec).poemId };
+    case 'scrap':
+      return { slot: 'scraps', id: spec.id };
+    default:
+      return null;
+  }
+}
+
 function find(obj: LiveObject): void {
   obj.found = true;
   if (persistence) {
@@ -520,6 +548,8 @@ function find(obj: LiveObject): void {
     if (obj.spec.kind === 'named' && (obj.spec as NamedSpec).partOf) {
       collect('dollParts', obj.spec.id);
     }
+    const carried = inventoryEntryFor(obj.spec);
+    if (carried) collect(carried.slot, carried.id);
   }
   const delay = FLOURISHES[obj.spec.id]?.(obj) ?? 0;
 

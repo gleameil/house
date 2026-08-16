@@ -177,7 +177,7 @@ readSharedKeys():      string[]   // evernost:shared:keys      — key ids held
 
 **Dolls and parts must be read independently.** The gorilla is in the second list and never the first. Anything in `/in/` that asks "do I have the gorilla" is asking about `dollParts`.
 
-**What `/in/` may assume:** all three are arrays of strings, or absent. Ids are stable and match the house's own object ids (`ragged`, `curly`, …; `gorilla-body`, `gorilla-leg`; `key1`…`key16`).
+**What `/in/` may assume:** all three are arrays of strings, or absent. Ids are stable and match the house's own object ids exactly as authored — **`key-1`…`key-16`, hyphenated**, not `key1`. (`key-13` never appears from the house's side: it is found in Jennie's room, and `/in/` grants it.) Dolls are `ragged`, `curly`, `plus-size`, `evil`, `gorilla`; parts are `curly-head`, `gorilla-leg`, and so on.
 
 **What `/in/` must tolerate, all as ordinary cases and none as errors:**
 
@@ -220,7 +220,11 @@ Ordered. Each step is independently shippable and leaves a working game. **The o
 
 **4. Move `fusionsDone` into `Inventory.dolls`,** via `collect('dolls', f.id)` in `restoreDoll()`, and record parts with `collect('dollParts', id)` in `find()`. *Must follow 3* — `restoreDoll` fires off the back of found parts, so if found-state isn't persistent yet the doll un-assembles on reload while its parts stay found. **Add `fusesOnCompletion` to `FusionSpec` in the same commit** (default `true`, `false` for the gorilla). Once parts persist across rooms, the existing `parts.every(p => p.found)` trigger will fire for every doll whose pieces have met — including the one that is supposed to wait until the end of February.
 
-**5. Route the counters through inventory.** `updateCounter()` currently counts `state.objects` — this room, this session. Moving it to `countOf(slot)` changes the semantics to cumulative-across-rooms, which is the intent but is a visible change to what the numbers mean. *Must follow 3 and 4* or every counter reads zero.
+**5. Route the counters through inventory.** Split in two, because only half of it is mechanical.
+
+*Done:* `find()` now calls `collect()` for every repeating kind — keys, almonds, papers (carried as their poem id), scraps — so the inventory fills as you play. This is what the mouse lane needs in order to have almonds to spend.
+
+*Not done, and it's a design call rather than a migration step:* `updateCounter()` still counts `state.objects`, i.e. **this room, this session**. Switching it to `countOf(slot)` would make the panel read "keys — 7 of 16" for the whole house instead of "keys — 2 of 5" for the room you're standing in. Both are defensible and they say different things. Nora's call; it is one line either way.
 
 **6. Replace the auto-advance in `updateList()`.** It currently calls `enterRoom(ROOMS[i+1])` cyclically on `allFound()`, and it does so in the same tick it reveals the "Nothing here is abandoned now" banner — so the banner has never actually been seen. This is the one step that *removes* behaviour, so it goes late, and **not before a real room-to-room flow exists** — otherwise you clear a room and nothing happens, and the game is unplayable. Pair it with the same commit that introduces the exit, whatever that turns out to be (map, key gate, or just a door).
 
@@ -228,4 +232,14 @@ Ordered. Each step is independently shippable and leaves a working game. **The o
 
 **8. Requests and final-pass mode.** The loop specified above, replacing the to-find list with the three-at-a-time panel plus the mess counter. *Must follow 3 and 6* — the request pool is read from `RoomState`, and while the auto-advance is still in place you'd be teleported out before a second visit could ever happen, so the anti-repeat ledger would never be exercised.
 
-**Out of scope for this lane and untouched:** keys and the map, almonds and mice, dolls, the zine and IndexedDB, lunes, every scene file, every special effect. Cross-room fusion (finding 1 above) is the one item that has no home on this list yet and needs one; the gorilla's deferred fusion is the piece of it that has a deadline, since it can't be built at all until `dollParts` persists.
+### Cross-room fusion — the next step, and it needs a decision
+
+Now that `dollParts` persists, three of the four dolls *could* be assembled. They still aren't, because `fusionReady()` asks the room, not the inventory. Two things have to be settled before that changes:
+
+**Where does a doll get assembled?** All four `FusionSpec`s live in the children's bedroom, and `restoredSpot` is authored for that room's geometry. If a fusion fired the moment you picked up `curly-head` in the spare room, the cutscene would play there and the doll would stand at coordinates that mean nothing in that room.
+
+**My recommendation: it fires in the room that owns the fusion.** You find the head in the spare room, and nothing happens; you carry it back to the children's bedroom, and the doll comes together where the dollhouse is. That matches how the data is already authored, it costs nothing to build, and it gives revisiting a room a reason — which is the whole point of the visit/pass loop. It also means the check has to run on *entering* a room, not only on finding something.
+
+The alternative — fuse wherever you're standing — needs a per-room `restoredSpot` and gets the player a doll sooner. Say which and I'll build it.
+
+**Out of scope for this lane and untouched:** the map, key gating, mice, the zine and IndexedDB, lunes, every scene file, every special effect.

@@ -21,6 +21,7 @@ import {
   Spot,
   HiddenObjectKind,
   HIDDEN_OBJECT_KINDS,
+  KindMeta,
   COUNTABLE_KINDS,
   NamedSpec,
   AlmondSpec,
@@ -288,12 +289,24 @@ function allFound(): boolean {
   );
 }
 
+/** The kind's own display name (e.g. 'paper' -> 'paper ball'), falling
+ *  back to the kind id when no display name is authored (e.g. 'key'). */
+function kindLabel(kind: HiddenObjectKind): string {
+  return (HIDDEN_OBJECT_KINDS[kind] as KindMeta).displayName ?? kind;
+}
+
+/** Strips a leading "the " for alphabetising — the only article that
+ *  shows up across the authored names; see house-briefs/B-bugfix-batch.md. */
+function sortKey(name: string): string {
+  return name.replace(/^the\s+/i, '').toLowerCase();
+}
+
 function updateCounter(kind: HiddenObjectKind) {
   const objectsOfKind = state.objects.filter((o) => o.spec.kind === kind);
   const counter = document.getElementById(`${kind}-count`);
   if (counter && objectsOfKind.length > 0)  {
     const found = objectsOfKind.filter((b) => b.found).length;
-    counter.textContent = `${kind}s — ${found} of ${objectsOfKind.length}`;
+    counter.textContent = `${kindLabel(kind)}s — ${found} of ${objectsOfKind.length}`;
   }
 }
 
@@ -557,24 +570,34 @@ function buildList(room: RoomSpec): HTMLElement {
   heading.textContent = room.name;
   panel.appendChild(heading);
   const ul = document.createElement('ul');
+
+  // Named objects and fusions share one alphabetised list, sorted by the
+  // name actually shown to the player (article stripped, case-insensitive)
+  // rather than by declaration order — see house-briefs/B-bugfix-batch.md.
+  const entries: { key: string; li: HTMLLIElement }[] = [];
   for (const spec of room.objects) {
     if (spec.kind !== 'named' || spec.partOf) continue;
+    const name = (spec as NamedSpec).name;
     const li = document.createElement('li');
     li.id = `to-find-${spec.id}`;
-    li.textContent = (spec as NamedSpec).name;
-    ul.appendChild(li);
+    li.textContent = name;
+    entries.push({ key: sortKey(name), li });
   }
   for (const f of room.fusions) {
     const li = document.createElement('li');
     li.id = `to-find-fusion-${f.id}`;
-    ul.appendChild(li);
+    entries.push({ key: sortKey(f.name), li });
   }
+  entries.sort((a, b) => a.key.localeCompare(b.key));
+  for (const { li } of entries) ul.appendChild(li);
 
-  COUNTABLE_KINDS.forEach((k) => {
+  const counters = COUNTABLE_KINDS.map((k) => ({ key: kindLabel(k).toLowerCase(), kind: k }));
+  counters.sort((a, b) => a.key.localeCompare(b.key));
+  for (const { kind } of counters) {
     const counterForKind = document.createElement('li');
-    counterForKind.id = `${k}-count`;
+    counterForKind.id = `${kind}-count`;
     ul.appendChild(counterForKind);
-  });
+  }
 
   panel.appendChild(ul);
 

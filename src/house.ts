@@ -388,9 +388,28 @@ function updateCounter(kind: HiddenObjectKind) {
   }
 }
 
+/** Whether an object gets its own line in the to-find panel.
+ *
+ *  A doll part is normally listed under its fusion instead of by name — but
+ *  only in the room that OWNS that fusion. Three of the four heads, and the
+ *  gorilla's body, sit in rooms that own no fusion of theirs, so skipping
+ *  every part unconditionally left them listed nowhere at all: no name to
+ *  hunt for, no fusion line, no acknowledgement they existed. Since
+ *  allFound() still counted them, four of the five rooms could not be
+ *  completed and the player was stuck in whichever one they reached first.
+ *
+ *  The gorilla is the permanent case rather than an oversight: he has no
+ *  FusionSpec anywhere, on purpose, so his pieces are always listed by name. */
+function isListedByName(spec: AnyHiddenObjectSpec, room: RoomSpec): boolean {
+  if (spec.kind !== 'named') return false;
+  const partOf = (spec as NamedSpec).partOf;
+  if (!partOf) return true;
+  return !room.fusions.some((f) => f.id === partOf);
+}
+
 function updateList(): void {
   for (const obj of state.objects) {
-    if (obj.spec.kind !== 'named' || obj.spec.partOf) continue;
+    if (!isListedByName(obj.spec, state.room!)) continue;
     const li = document.getElementById(`to-find-${obj.spec.id}`);
     if (li) li.classList.toggle('found', obj.found);
   }
@@ -815,7 +834,7 @@ function buildList(room: RoomSpec): HTMLElement {
   // rather than by declaration order — see house-briefs/B-bugfix-batch.md.
   const entries: { key: string; li: HTMLLIElement }[] = [];
   for (const spec of room.objects) {
-    if (spec.kind !== 'named' || spec.partOf) continue;
+    if (!isListedByName(spec, room)) continue;
     const name = (spec as NamedSpec).name;
     const li = document.createElement('li');
     li.id = `to-find-${spec.id}`;

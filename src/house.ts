@@ -37,6 +37,7 @@ import {
 import { renderMarkdown } from './markdown';
 import { initSoundToggle } from './effects/sound-toggle';
 import { startWindAmbience, stopWindAmbience } from './effects/wind';
+import { mountMice } from './mice/mice';
 import { ensureSchema } from './state/store';
 import { collect, readInventory, recordFound, recordVisit } from './state/inventory';
 import { InventorySlot } from './state/state.constants';
@@ -909,6 +910,7 @@ export async function enterRoom(room: RoomSpec): Promise<void> {
     placeAtSpot(obj.element, obj.spot, obj.naturalWidth, obj.naturalHeight);
   window.addEventListener('resize', sizeRoomToViewport);
   container.addEventListener('click', onRoomClick);
+  mountMice(container, room);
   void standRestoredDolls(room);
   updateList();
   // Walking in holding the last piece is itself the trigger. Delayed so the

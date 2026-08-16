@@ -706,3 +706,128 @@ body {
   opacity: 1;
   filter: brightness(1);
 }
+
+/* ---------------------------------------------------------------- mice -- */
+/* Fauna. The mouse is pointer-events: none like every other thing in the
+   room — src/mice/mice.ts hit-tests it per-pixel against the current leg
+   frame, so a click on the gap between its legs falls through to the game.
+   And no cursor tell, here least of all: a mouse you can find by hovering is
+   not a mouse you found.
+
+   The gait's timings are NOT here. The left/top/width/opacity transitions are
+   set inline from MOUSE_FRAME_MS and MOUSE_FADE_MS in house.constants.ts, so
+   the frame rate and the step distance live in one place and swapping in real
+   four-frame art stays a two-number change. */
+
+.house-mouse {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  transform-origin: 50% 100%;
+}
+
+.house-mouse.out {
+  opacity: 1;
+}
+
+.house-mouse.nibbling {
+  animation: nibble 0.22s ease-in-out infinite;
+}
+
+@keyframes nibble {
+  0%,
+  100% {
+    rotate: 0deg;
+  }
+  50% {
+    rotate: -3deg;
+  }
+}
+
+.house-mouse.startled {
+  animation: startle 0.32s ease-out;
+}
+
+@keyframes startle {
+  0% {
+    scale: 1 1;
+  }
+  35% {
+    scale: 1.12 0.88;
+  }
+  100% {
+    scale: 1 1;
+  }
+}
+
+/* The ask: an almond, drawn in a bubble over the mouse's head, shown only
+   while the player is carrying one and only until the first trade — see the
+   long note at the foot of src/mice/mice.ts. */
+.mouse-thought {
+  position: absolute;
+  transform: translate(-50%, -115%);
+  padding: 0.25rem;
+  border: 1px solid var(--warm-black);
+  border-radius: 50%;
+  background: var(--parchment);
+  box-shadow: 0.08rem 0.08rem 0 rgba(58, 43, 30, 0.35);
+  pointer-events: none;
+  animation: thought-in 0.5s ease both;
+}
+
+.mouse-thought::after {
+  content: '';
+  position: absolute;
+  left: 40%;
+  bottom: -0.32rem;
+  width: 0.3rem;
+  height: 0.3rem;
+  border: 1px solid var(--warm-black);
+  border-radius: 50%;
+  background: var(--parchment);
+}
+
+.mouse-thought img {
+  display: block;
+  width: 100%;
+}
+
+@keyframes thought-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -95%) scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -115%) scale(1);
+  }
+}
+
+/* The fragment reveal: the card's title comes apart into letters that drift
+   up off the mouse, one per character, staggered — the text-particle effect
+   notes.md asks for, in the same register as .fairy-spark and .music-note. */
+.fragment-particle {
+  position: fixed;
+  font-size: 1rem;
+  font-style: italic;
+  color: var(--parchment);
+  text-shadow: 0 0 0.5rem rgba(20, 14, 9, 0.9), 0 0 0.9rem rgba(20, 14, 9, 0.7);
+  pointer-events: none;
+  white-space: pre;
+  animation: fragment-rise 2.2s ease-out both;
+}
+
+@keyframes fragment-rise {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0.5rem) scale(0.7);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -0.4rem) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -3.4rem) scale(1.05);
+  }
+}

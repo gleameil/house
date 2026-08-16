@@ -1347,7 +1347,7 @@ const CHILDRENS_BEDROOM: RoomSpec = {
       id: 'plus-size',
       name: 'the plus-sized doll',
       assembled: plusSize,
-      partIds: ['plus-size-body', 'curly-head'],
+      partIds: ['plus-size-body', 'plus-size-head'],
       headLanding: { x: 0.5, y: 0.115 },
       restoredSpot: { x: 0.328, y: 0.63, width: 0.048 },
     },

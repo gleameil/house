@@ -120,15 +120,28 @@ function shuffled<T>(items: T[]): T[] {
   return copy;
 }
 
+/** Fraction-space rectangle in the top-right corner reserved for the
+ *  to-find panel; free-floating spots stay clear of it. */
+const PANEL_EXCLUSION_ZONE = { minX: 0.8, maxY: 0.22 };
+
+/** How close (in spot-fraction units) a candidate spot may land to a point
+ *  being avoided — used to keep the wind from dropping a scrap back under
+ *  the cursor that just clicked one away. */
+const SCRAP_AVOID_RADIUS = 0.06;
+
 /** A free-floating random spot, resampled if it would land in the
  *  to-find panel's top-right corner — the one part of the screen a
- *  fully random position can't be authored away from. */
-function randomSpot(): Spot {
+ *  fully random position can't be authored away from — or, if `avoid` is
+ *  given, too close to that point. */
+function randomSpot(avoid?: { x: number; y: number }): Spot {
   let x: number, y: number;
   do {
     x = Math.random();
     y = Math.random();
-  } while (x > 0.8 && y < 0.22);
+  } while (
+    (x > PANEL_EXCLUSION_ZONE.minX && y < PANEL_EXCLUSION_ZONE.maxY) ||
+    (avoid !== undefined && Math.hypot(x - avoid.x, y - avoid.y) < SCRAP_AVOID_RADIUS)
+  );
   return { x, y, width: 0.04 };
 }
 
@@ -194,6 +207,25 @@ function placeAtSpot(
     spot.width * (naturalHeight / naturalWidth) * state.room!.aspectRatio;
   element.style.top = `${(spot.y - heightFraction / 2) * 100}%`;
   element.style.transform = spot.rotation ? `rotate(${spot.rotation}deg)` : '';
+}
+
+/** The balcony's scraps are meant to be blowing in the wind, not sitting
+ *  still once placed: every time one is clicked, the rest drift to a new
+ *  spot. A scrap already near the click point — the one just found, or
+ *  another one stacked near it — is left alone, and no scrap is moved to
+ *  a new spot near the click point either. */
+function reshuffleScraps(clientX: number, clientY: number): void {
+  const roomRect = state.container!.getBoundingClientRect();
+  const avoid = {
+    x: (clientX - roomRect.left) / roomRect.width,
+    y: (clientY - roomRect.top) / roomRect.height,
+  };
+  for (const obj of state.objects) {
+    if (obj.spec.kind !== 'scrap' || obj.found) continue;
+    if (Math.hypot(obj.spot.x - avoid.x, obj.spot.y - avoid.y) < SCRAP_AVOID_RADIUS) continue;
+    obj.spot = randomSpot(avoid);
+    placeAtSpot(obj.element, obj.spot, obj.naturalWidth, obj.naturalHeight);
+  }
 }
 
 function sizeRoomToViewport(): void {
@@ -454,6 +486,7 @@ function onRoomClick(event: MouseEvent): void {
     if (obj.found) continue;
     if (hits(obj, event.clientX, event.clientY)) {
       find(obj);
+      if (obj.spec.kind === 'scrap') reshuffleScraps(event.clientX, event.clientY);
       return;
     }
   }
@@ -636,7 +669,7 @@ export async function enterRoom(room: RoomSpec): Promise<void> {
     const element = document.createElement('img');
     element.src = spec.image;
     element.alt = '';
-    element.className = 'hidden-object';
+    element.className = spec.kind === 'scrap' ? 'hidden-object scrap' : 'hidden-object';
     element.draggable = false;
     element.dataset.objectId = spec.id;
     const live: LiveObject = {

@@ -1,44 +1,20 @@
-// wind.ts — balcony wind ambience.
+// wind.ts — the balcony's wind ambience.
 //
-// assets/wind-loop.mp3 does not exist. Nora will eventually trim it from
-// the desolation/gray-weather track in /out/, and there is no ffmpeg on
-// this machine to do that here. The brief for this is explicit that
-// absence is the ordinary case, not a failure — but that has one real
-// consequence for how this file is written, worth spelling out because it
-// is not obvious:
+// Source is the desolation/gray-weather track from /out/, trimmed and
+// compressed to assets/wind.mp3 (67 KB, well under the 300 KB the asset
+// contract asks for).
 //
-// This module deliberately does NOT do `import x from 'url:../assets/
-// wind-loop.mp3'`, even though that is the pattern every other asset in
-// this game uses (see house.constants.ts). I confirmed empirically, in an
-// isolated scratch project against this repo's own Parcel install, that
-// Parcel's bundler resolves `url:` import specifiers at BUILD time and
-// hard-fails the whole build if the target file does not exist — for both
-// static and dynamic import forms, try/catch does not help, because the
-// failure happens during bundling, before any of this module's code runs.
-// A missing file behind a `url:` import is therefore a build error, not a
-// runtime one, and "silent no-op" is not achievable that way.
-//
-// So WIND_LOOP_SRC below is a plain string — never touched by Parcel's
-// asset pipeline — pointing at the path the file will live at once it's
-// real. Requesting a path nothing serves is an ordinary runtime 404, which
-// is precisely the kind of failure Audio.play()'s rejected promise (and
-// the audio element's `error` event) already exist to represent, and both
-// are swallowed below the same way playSound() in house.ts already
-// swallows a blocked-autoplay rejection — same idiom, not a second audio
-// path, just applied to a source that may not resolve to anything yet.
-//
-// THE ONE-LINE INTEGRATION STEP once wind-loop.mp3 is real: replace the
-// WIND_LOOP_SRC string with a proper Parcel import, e.g.
-//
-//   import windLoop from 'url:../assets/wind-loop.mp3';
-//   const WIND_LOOP_SRC = windLoop;
-//
-// so the file gets fingerprinted and bundled like every other asset. Until
-// then, this plays nothing, on every browser, and throws nowhere.
+// Note the history here, because it is a trap worth remembering: while the
+// file was missing this could NOT use Parcel's `url:` import, because Parcel
+// hard-fails the whole build on a missing url: asset — static or dynamic —
+// rather than resolving it to a 404 at runtime. "Build against the path with
+// a placeholder committed" only works when a placeholder actually exists. Now
+// that the real loop is here, the import is the ordinary one.
 
+import windLoop from 'url:../../assets/wind.mp3';
 import { readSound } from '../state/inventory';
 
-const WIND_LOOP_SRC = 'assets/wind-loop.mp3';
+const WIND_LOOP_SRC = windLoop;
 
 let windAudio: HTMLAudioElement | null = null;
 

@@ -22,13 +22,13 @@ import key14 from 'url:../assets/key14.png';
 import key15 from 'url:../assets/key15.png';
 import key16 from 'url:../assets/key16.png';
 
+// Four leg positions for the scurry cycler, all 246x79 on a shared baseline.
+// The original single mouse drawing is frame one; see MOUSE_FRAMES at the foot
+// of this file.
 import mouse from 'url:../assets/mouse.png';
-// four leg positions for the scurry cycler; see MOUSE_FRAMES at the foot of
-// this file for why they are currently four copies of the same drawing
-import mouse1 from 'url:../assets/mouse-1.png';
-import mouse2 from 'url:../assets/mouse-2.png';
-import mouse3 from 'url:../assets/mouse-3.png';
-import mouse4 from 'url:../assets/mouse-4.png';
+import mouse2 from 'url:../assets/mouse2.png';
+import mouse3 from 'url:../assets/mouse3.png';
+import mouse4 from 'url:../assets/mouse4.png';
 import paper from 'url:../assets/paper.png';
 import heart from 'url:../assets/heart.png';
 import roarSound from 'url:../assets/roar.mp3';
@@ -83,12 +83,13 @@ import lightbulb from 'url:../assets/lightbulb.png';
 import magazine from 'url:../assets/magazine.png';
 import notebook from 'url:../assets/notebook.png';
 import brokenPicture from 'url:../assets/picture-escaping-frame.png';
-// picture-restored.png is a placeholder duplicate of picture-escaping-frame.png
-// (00-CONTRACTS.md names these painting-broken/painting-restored; those names
-// are wrong for this repo — the object is `broken-picture`, and its real
-// filenames are picture-escaping-frame.png / picture-restored.png). Until
-// real restored art lands, the crossfade flourish runs as a no-op flicker.
-import pictureRestored from 'url:../assets/picture-restored.png';
+// The crossfade's two states. 00-CONTRACTS.md calls these
+// painting-broken/painting-restored; those names are wrong for this repo — the
+// object is `broken-picture`. Note the two drawings are NOT the same shape
+// (862x858 escaping the frame, 572x641 whole), so the crossfade preserves the
+// whole picture's own aspect rather than stretching it into the broken one's
+// box — see flourishPicture in house.ts.
+import pictureRestored from 'url:../assets/picture-whole.png';
 import potatoChips from 'url:../assets/potato-chips.png';
 import styleGuide from 'url:../assets/substance-of-style.png';
 import thumbDrive from 'url:../assets/thumb-drive.png';
@@ -2426,13 +2427,12 @@ export const ROOMS = [BROOM_CLOSET, MASTER_BATHROOM, SPARE_ROOM, BALCONY, CHILDR
 // below is the DATA the mechanic needs. The behaviour lives in src/mice/.
 // See notes.md ("Almond text") and CLAUDE.md Known Debt #1.
 
-/** The four leg positions, cycled while a mouse is moving.
- *
- *  These are currently four identical copies of the single mouse drawing —
- *  the placeholder house-briefs/00-CONTRACTS.md §2 asks for, so the cycler
- *  runs (badly, in place) until real legs land. Dropping four real frames
- *  over mouse-1..4.png is the whole integration step; no code changes. */
-export const MOUSE_FRAMES: string[] = [mouse1, mouse2, mouse3, mouse4];
+/** The four leg positions, cycled while a mouse is moving. Real drawn frames
+ *  as of "assets round one" — all 246x79 on a shared baseline, so the cycler
+ *  reads as motion rather than as a jitter. At the size a mouse renders,
+ *  a sense of motion is the whole ambition. Frame rate and step distance are
+ *  MOUSE_FRAME_MS and MOUSE_STEP below; one frame is one step. */
+export const MOUSE_FRAMES: string[] = [mouse, mouse2, mouse3, mouse4];
 
 /** The drawing faces LEFT — head at the left edge, tail at the right. The
  *  renderer mirrors the sprite when a mouse travels the other way, so if

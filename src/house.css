@@ -362,6 +362,9 @@ body {
   position: fixed;
   pointer-events: none;
   opacity: 0;
+  /* height follows the restored drawing's own proportions; flourishPicture
+     supplies only the width and centres it vertically. */
+  height: auto;
   animation: picture-restore 2.2s ease-in-out both;
 }
 
@@ -501,11 +504,10 @@ body {
 }
 
 /* -------------------------------------------------------- virus modal -- */
-/* src/effects/virus-modal.ts. Comic register on purpose: rotated, blobby
-   border-radius instead of straight corners, a clashing two-tone drop
-   shadow, and a continuous wobble — this must read as a joke on sight,
-   never as a real browser or OS dialogue (no title bar, no native-looking
-   button, no system colors). */
+/* src/effects/virus-modal.ts. The comic register lives in the drawing
+   (assets/malwaremodal.png), so this only has to get it on screen, wobble
+   it, and take it away again. Nothing here may acquire window chrome, a
+   title bar or system colors — it must never read as a real dialogue. */
 
 .virus-modal {
   position: fixed;
@@ -513,17 +515,8 @@ body {
   left: 50%;
   translate: -50% 0;
   rotate: -2deg;
-  width: min(20rem, 80vw);
-  padding: 1.2rem 1.4rem 1.5rem;
-  background: #fffbcf;
-  border: 0.35rem solid #d90000;
-  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
-  box-shadow:
-    0.6rem 0.7rem 0 #ff00c8,
-    0.9rem 1.1rem 0 rgba(0, 0, 0, 0.55);
-  font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive, sans-serif;
-  color: #b40000;
-  text-align: center;
+  width: min(30rem, 82vw);
+  height: auto;
   cursor: default;
   z-index: 50;
   opacity: 1;
@@ -539,27 +532,6 @@ body {
   opacity: 0;
   rotate: 8deg;
   scale: 0.75;
-}
-
-.virus-modal-title {
-  font-size: 1rem;
-  letter-spacing: 0.05em;
-  margin-bottom: 0.4rem;
-}
-
-.virus-modal-body {
-  font-size: 1.4rem;
-  font-weight: bold;
-  line-height: 1.3;
-  text-shadow: 0.1rem 0.1rem 0 #ffe400;
-}
-
-.virus-modal-hint {
-  margin-top: 0.6rem;
-  font-size: 0.7rem;
-  font-style: italic;
-  color: #6b0000;
-  opacity: 0.8;
 }
 
 @keyframes virus-pop-in {

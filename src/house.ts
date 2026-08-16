@@ -37,6 +37,7 @@ import {
 import { renderMarkdown } from './markdown';
 import { initSoundToggle } from './effects/sound-toggle';
 import { startWindAmbience, stopWindAmbience } from './effects/wind';
+import { showVirusModal } from './effects/virus-modal';
 import { mountMice } from './mice/mice';
 import { ensureSchema } from './state/store';
 import { collect, readInventory, recordFound, recordVisit } from './state/inventory';
@@ -453,6 +454,7 @@ const FLOURISHES: Record<string, (obj: LiveObject) => number> = {
   'music-box': flourishMusicBox,
   mirror: flourishMirror,
   'broken-picture': flourishPicture,
+  'thumb-drive': flourishVirus,
 };
 
 function flourishBunny(obj: LiveObject): number {
@@ -524,17 +526,31 @@ function flourishMirror(): number {
  *  crossfade rather than an instant src swap. Until real restored art
  *  lands, PICTURE_RESTORED_IMAGE is a duplicate of the broken art, so this
  *  plays as a no-op flicker; see house.constants.ts. */
+/** The sketchy thumb drive does what a sketchy thumb drive does. Returns 0:
+ *  the popup is its own full-screen event that the player dismisses, so there
+ *  is no reason to hold the thumb drive's find-fade behind it. */
+function flourishVirus(): number {
+  showVirusModal();
+  return 0;
+}
+
 function flourishPicture(obj: LiveObject): number {
   const rect = layoutRect(obj);
   const overlay = document.createElement('img');
   overlay.src = PICTURE_RESTORED_IMAGE;
   overlay.alt = '';
   overlay.className = 'house picture-crossfade';
+  // The two drawings are not the same shape — the broken one is nearly square
+  // because the picture is escaping its frame, the whole one is taller than it
+  // is wide. Matching the broken art's box exactly would squash the restored
+  // picture, so it takes the same width and centre and keeps its own height
+  // (left to CSS as `height: auto`). Rotation has to be composed with the
+  // centring translate rather than replacing it.
+  const spin = obj.spot.rotation ? ` rotate(${obj.spot.rotation}deg)` : '';
   overlay.style.left = `${rect.left}px`;
-  overlay.style.top = `${rect.top}px`;
+  overlay.style.top = `${rect.cy}px`;
   overlay.style.width = `${rect.width}px`;
-  overlay.style.height = `${rect.height}px`;
-  overlay.style.transform = obj.spot.rotation ? `rotate(${obj.spot.rotation}deg)` : '';
+  overlay.style.transform = `translateY(-50%)${spin}`;
   document.body.appendChild(overlay);
   overlay.addEventListener('animationend', () => overlay.remove());
   return 2200;

@@ -35,6 +35,8 @@ import {
   POEM_CONTENT,
 } from './house.constants';
 import { renderMarkdown } from './markdown';
+import { initSoundToggle } from './effects/sound-toggle';
+import { startWindAmbience, stopWindAmbience } from './effects/wind';
 import { ensureSchema } from './state/store';
 import { collect, readInventory, recordFound, recordVisit } from './state/inventory';
 import { InventorySlot } from './state/state.constants';
@@ -834,6 +836,11 @@ export async function enterRoom(room: RoomSpec): Promise<void> {
     current[0].remove();
   }
   state.room = room;
+  // The wind belongs to the balcony and nowhere else, so it follows the room
+  // rather than the page. The toggle in the corner can silence it.
+  if (room.id === 'balcony') startWindAmbience();
+  else stopWindAmbience();
+
   const container = document.createElement('div');
   container.className = 'house';
   container.id = 'house-room';
@@ -892,6 +899,10 @@ export async function enterRoom(room: RoomSpec): Promise<void> {
 
   document.body.appendChild(container);
   document.body.appendChild(buildList(room));
+  // initSoundToggle appends for us. The toggle carries the 'house' class, so
+  // it is torn down and rebuilt with everything else on a room change rather
+  // than needing a lifecycle of its own.
+  initSoundToggle();
 
   sizeRoomToViewport();
   for (const obj of state.objects)

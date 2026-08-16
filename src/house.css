@@ -42,6 +42,14 @@ body {
     filter 0.9s ease;
 }
 
+.hidden-object.scrap {
+  transition:
+    opacity 0.9s ease,
+    filter 0.9s ease,
+    left 0.38s ease,
+    top 0.38s ease;
+}
+
 .hidden-object.being-found {
   opacity: 0;
   filter: brightness(2) blur(2px);

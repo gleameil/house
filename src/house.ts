@@ -310,8 +310,32 @@ function fusionFor(obj: LiveObject): FusionSpec | undefined {
   return state.room!.fusions.find((f) => f.id === (obj.spec as NamedSpec).partOf);
 }
 
+/** The parts of a fusion that are present IN THE CURRENT ROOM. Parts in other
+ *  rooms are invisible here, because state.objects is only ever this room. */
 function fusionParts(f: FusionSpec): LiveObject[] {
   return state.objects.filter((o) => (o.spec as NamedSpec).partOf === f.id);
+}
+
+/** A fusion may only run when every part it DECLARES is present in this room
+ *  and found.
+ *
+ *  Checking fusionParts().every() instead would ask "is everything I can see
+ *  found?", which is vacuously true for a fusion whose other half is in
+ *  another room — and three of the four are: curly-head is in the spare room,
+ *  plus-size-head in the broom closet, evil-head in the master bathroom. Only
+ *  ragged has both parts in the children's bedroom. Under the weaker check,
+ *  finding curly-body alone satisfied the condition, runFusion() then did
+ *  `state.objects.find(id === partIds[1])!.spec` on an object that is not in
+ *  the room, and the resulting TypeError left cutscenePlaying stuck true
+ *  inside a rejected promise — the room silently stopped accepting clicks.
+ *
+ *  This restores the intended behaviour: ragged fuses, the other three wait.
+ *  They stay waiting until dollParts outlives the room it was found in, which
+ *  is migration step 4 in doc-house-state.md — and this predicate is the seam
+ *  that step replaces. */
+function fusionReady(f: FusionSpec): boolean {
+  const parts = fusionParts(f);
+  return f.partIds.every((id) => parts.some((p) => p.spec.id === id && p.found));
 }
 
 function allFound(): boolean {
@@ -357,7 +381,9 @@ function updateList(): void {
       li.textContent = f.name;
       li.classList.add('found');
     } else {
-      li.textContent = `${f.name} — ${foundCount} of ${parts.length} pieces`;
+      // partIds.length, not parts.length: parts only counts what is in this
+      // room, so a cross-room doll read "0 of 1 pieces" instead of "0 of 2"
+      li.textContent = `${f.name} — ${foundCount} of ${f.partIds.length} pieces`;
       li.classList.remove('found');
     }
   }
@@ -470,11 +496,8 @@ function find(obj: LiveObject): void {
     if (obj.spec.kind === 'paper') openPaperModal(obj);
 
     const f = fusionFor(obj);
-    if (f && !state.fusionsDone.has(f.id)) {
-      const parts = fusionParts(f);
-      if (parts.every((p) => p.found)) {
-        window.setTimeout(() => runFusion(f), 900);
-      }
+    if (f && !state.fusionsDone.has(f.id) && fusionReady(f)) {
+      window.setTimeout(() => runFusion(f), 900);
     }
   }, delay);
 }

@@ -63,10 +63,10 @@ export function countOf(slot: InventorySlot): number {
 /** Add an id to a slot. Idempotent — finding the same object twice, or a
  *  reload mid-animation, must not produce "keys — 17 of 16".
  *
- *  `dolls` and `keys` are additionally mirrored into the evernost:shared:*
- *  arrays that /in/ reads, by union rather than replacement (see
- *  unionIntoShared). The inventory record stays the house's own account; the
- *  shared arrays are the handoff surface, and they are deliberately the
+ *  `dolls`, `dollParts` and `keys` are additionally mirrored into the
+ *  evernost:shared:* arrays that /in/ reads, by union rather than replacement
+ *  (see unionIntoShared). The inventory record stays the house's own account;
+ *  the shared arrays are the handoff surface, and they are deliberately the
  *  smaller, dumber thing — /in/ should never have to parse an Inventory. */
 export function collect(slot: InventorySlot, id: string): Inventory {
   const inventory = readInventory();
@@ -75,6 +75,7 @@ export function collect(slot: InventorySlot, id: string): Inventory {
     writeInventory(inventory);
   }
   if (slot === 'dolls') unionIntoShared(STORAGE_KEYS.sharedDolls, [id]);
+  if (slot === 'dollParts') unionIntoShared(STORAGE_KEYS.sharedDollParts, [id]);
   if (slot === 'keys') unionIntoShared(STORAGE_KEYS.sharedKeys, [id]);
   return inventory;
 }
@@ -106,14 +107,24 @@ export function almondsEverFound(inventory: Inventory = readInventory()): string
 // array, never to a throw and never to a prompt. A player who reaches /in/
 // having never opened the house gets [] and an ordinary February.
 
-export function readSharedDolls(): string[] {
-  const value = readShared<unknown>(STORAGE_KEYS.sharedDolls, []);
+function stringArray(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
 }
 
+export function readSharedDolls(): string[] {
+  return stringArray(readShared<unknown>(STORAGE_KEYS.sharedDolls, []));
+}
+
+/** The pieces, not the finished dolls. /in/ needs both lists and must read
+ *  them independently: the Gorilla Prince arrives here in two pieces and
+ *  never appears in readSharedDolls(), because the house does not assemble
+ *  him. If /in/ later heals him, it writes the doll with grantDolls(). */
+export function readSharedDollParts(): string[] {
+  return stringArray(readShared<unknown>(STORAGE_KEYS.sharedDollParts, []));
+}
+
 export function readSharedKeys(): string[] {
-  const value = readShared<unknown>(STORAGE_KEYS.sharedKeys, []);
-  return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
+  return stringArray(readShared<unknown>(STORAGE_KEYS.sharedKeys, []));
 }
 
 /** key13 is the reason this is exported rather than kept private: its "Found
@@ -121,6 +132,13 @@ export function readSharedKeys(): string[] {
  *  found in Jennie's room in /in/, not in any house room. /in/ writes it here. */
 export function grantKeys(ids: string[]): string[] {
   return unionIntoShared(STORAGE_KEYS.sharedKeys, ids);
+}
+
+/** The other direction of the same door: /in/ assembling a doll the house
+ *  could not. The gorilla is the case this exists for. Union, never replace —
+ *  the house's own dolls are in the same array. */
+export function grantDolls(ids: string[]): string[] {
+  return unionIntoShared(STORAGE_KEYS.sharedDolls, ids);
 }
 
 // ---------------------------------------------------------------- sound ---

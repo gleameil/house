@@ -24,6 +24,7 @@ export const STORAGE_KEYS = {
   schema: 'evernost:schema',
   inventory: 'evernost:house:inventory',
   sharedDolls: 'evernost:shared:dolls',
+  sharedDollParts: 'evernost:shared:dollParts',
   sharedKeys: 'evernost:shared:keys',
   sound: 'evernost:settings:sound',
   /** per-room; house-private, read with readLocal */
@@ -65,12 +66,18 @@ export interface Inventory {
   papers: string[];
   /** windswept abstract ids — 28 of them, all on the balcony */
   scraps: string[];
-  /** heads, bodies, limbs, gorilla + gorilla leg */
+  /** heads, bodies, limbs, gorilla + gorilla leg. Mirrored to
+   *  evernost:shared:dollParts, because /in/ needs the PIECES, not only the
+   *  finished dolls — see the note on `dolls` below. */
   dollParts: string[];
-  /** dolls that have been made whole. NOT every part-pair produces an entry
-   *  here: the Gorilla Prince is canonically never redeemed, so gorilla-body
-   *  and gorilla-leg live in dollParts forever and no `gorilla` doll is ever
-   *  written. /in/ must not infer dolls from parts. */
+  /** dolls that have been made whole.
+   *
+   *  NOT derivable from dollParts, in both directions. The Gorilla Prince
+   *  crosses into /in/ in two pieces and stays that way through the house:
+   *  his fusion is deferred, not impossible, and may land at the end of
+   *  February (the Fisher King healed). So holding every part of a doll does
+   *  not imply the doll — and conversely, /in/ may write a doll here that the
+   *  house never assembled. Neither side may infer one list from the other. */
   dolls: string[];
   /** mouse-given, keyed to This Thing poems; see the id note above */
   artFragments: string[];

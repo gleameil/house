@@ -27,9 +27,11 @@ import {
   collect,
   countOf,
   freezeMessTotal,
+  grantDolls,
   grantKeys,
   readInventory,
   readRoomState,
+  readSharedDollParts,
   readSharedDolls,
   readSharedKeys,
   readSound,
@@ -128,6 +130,16 @@ same('collect mirrors keys into shared', readSharedKeys(), ['key1']);
 collect('dolls', 'ragged');
 same('collect mirrors dolls into shared', readSharedDolls(), ['ragged']);
 same('dollParts stays independent of dolls', readInventory().dollParts, []);
+
+// the gorilla: two parts cross to /in/, no doll ever does
+collect('dollParts', 'gorilla-body');
+collect('dollParts', 'gorilla-leg');
+same('collect mirrors dollParts into shared', readSharedDollParts(), ['gorilla-body', 'gorilla-leg']);
+same('holding every part does not imply the doll', readSharedDolls(), ['ragged']);
+check('the gorilla is not in dolls', !readSharedDolls().includes('gorilla'));
+grantDolls(['gorilla']);
+same('/in/ can heal what the house could not', readSharedDolls(), ['ragged', 'gorilla']);
+same('granting a doll does not disturb its parts', readSharedDollParts(), ['gorilla-body', 'gorilla-leg']);
 
 collect('almonds', 'almond-3');
 collect('almonds', 'almond-7');

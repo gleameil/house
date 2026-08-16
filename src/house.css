@@ -358,6 +358,31 @@ body {
   }
 }
 
+.picture-crossfade {
+  position: fixed;
+  pointer-events: none;
+  opacity: 0;
+  animation: picture-restore 2.2s ease-in-out both;
+}
+
+/* broken (obj.element, underneath) -> restored (this overlay) -> broken:
+   the overlay fades all the way in, holds, then fades back out, leaving
+   the ordinary broken art visible again for the found-fade that follows. */
+@keyframes picture-restore {
+  0% {
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+  }
+  65% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 /* ------------------------------------------------------------- paper modal -- */
 
 #paper-overlay {
@@ -436,6 +461,127 @@ body {
 
 #paper-close:hover {
   color: var(--faded-ink);
+}
+
+/* -------------------------------------------------------- sound toggle -- */
+/* src/effects/sound-toggle.ts. Deliberately NOT cursor: pointer — see the
+   rule at the top of this file. Emoji placeholder today; swapping in
+   sound-on.png / sound-off.png later is a change to that file only, not
+   to these rules. */
+
+.sound-toggle {
+  position: fixed;
+  left: 1rem;
+  bottom: 1rem;
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  border: 1px solid var(--warm-black);
+  border-radius: 50%;
+  background: var(--parchment);
+  color: var(--warm-black);
+  font-size: 1.2rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  box-shadow: 0.15rem 0.15rem 0 rgba(58, 43, 30, 0.35);
+  z-index: 20;
+  opacity: 0.85;
+  transition: opacity 0.2s ease;
+}
+
+.sound-toggle:hover {
+  opacity: 1;
+}
+
+.sound-toggle-off {
+  opacity: 0.55;
+}
+
+/* -------------------------------------------------------- virus modal -- */
+/* src/effects/virus-modal.ts. Comic register on purpose: rotated, blobby
+   border-radius instead of straight corners, a clashing two-tone drop
+   shadow, and a continuous wobble — this must read as a joke on sight,
+   never as a real browser or OS dialogue (no title bar, no native-looking
+   button, no system colors). */
+
+.virus-modal {
+  position: fixed;
+  top: 22%;
+  left: 50%;
+  translate: -50% 0;
+  rotate: -2deg;
+  width: min(20rem, 80vw);
+  padding: 1.2rem 1.4rem 1.5rem;
+  background: #fffbcf;
+  border: 0.35rem solid #d90000;
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  box-shadow:
+    0.6rem 0.7rem 0 #ff00c8,
+    0.9rem 1.1rem 0 rgba(0, 0, 0, 0.55);
+  font-family: 'Comic Sans MS', 'Chalkboard SE', 'Marker Felt', cursive, sans-serif;
+  color: #b40000;
+  text-align: center;
+  cursor: default;
+  z-index: 50;
+  opacity: 1;
+  scale: 1;
+  animation:
+    virus-pop-in 0.35s ease-out both,
+    virus-wobble 0.9s ease-in-out 0.35s infinite alternate;
+  transition: opacity 0.35s ease, translate 0.35s ease, rotate 0.35s ease, scale 0.35s ease;
+}
+
+.virus-modal.virus-modal-fading {
+  animation: none;
+  opacity: 0;
+  rotate: 8deg;
+  scale: 0.75;
+}
+
+.virus-modal-title {
+  font-size: 1rem;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.4rem;
+}
+
+.virus-modal-body {
+  font-size: 1.4rem;
+  font-weight: bold;
+  line-height: 1.3;
+  text-shadow: 0.1rem 0.1rem 0 #ffe400;
+}
+
+.virus-modal-hint {
+  margin-top: 0.6rem;
+  font-size: 0.7rem;
+  font-style: italic;
+  color: #6b0000;
+  opacity: 0.8;
+}
+
+@keyframes virus-pop-in {
+  0% {
+    opacity: 0;
+    scale: 0.7;
+    rotate: -10deg;
+  }
+  100% {
+    opacity: 1;
+    scale: 1;
+    rotate: -2deg;
+  }
+}
+
+@keyframes virus-wobble {
+  0% {
+    rotate: -2deg;
+  }
+  100% {
+    rotate: 2.5deg;
+  }
 }
 
 /* -------------------------------------------------------------- fusion -- */

@@ -77,6 +77,12 @@ import lightbulb from 'url:../assets/lightbulb.png';
 import magazine from 'url:../assets/magazine.png';
 import notebook from 'url:../assets/notebook.png';
 import brokenPicture from 'url:../assets/picture-escaping-frame.png';
+// picture-restored.png is a placeholder duplicate of picture-escaping-frame.png
+// (00-CONTRACTS.md names these painting-broken/painting-restored; those names
+// are wrong for this repo — the object is `broken-picture`, and its real
+// filenames are picture-escaping-frame.png / picture-restored.png). Until
+// real restored art lands, the crossfade flourish runs as a no-op flicker.
+import pictureRestored from 'url:../assets/picture-restored.png';
 import potatoChips from 'url:../assets/potato-chips.png';
 import styleGuide from 'url:../assets/substance-of-style.png';
 import thumbDrive from 'url:../assets/thumb-drive.png';
@@ -185,6 +191,7 @@ export interface KindMeta {
 export const BUNNY_LIVE_IMAGE = bunnyLive;
 export const ROAR_SOUND = roarSound;
 export const MUSIC_BOX_SOUND = musicBoxSound;
+export const PICTURE_RESTORED_IMAGE = pictureRestored;
 
 export const HIDDEN_OBJECT_KINDS =
   { 

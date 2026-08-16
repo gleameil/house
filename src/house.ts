@@ -709,18 +709,22 @@ function standDoll(f: FusionSpec, assembled: HTMLImageElement): void {
  *  guarded, because two cutscenes at once would fight over the overlay. Called
  *  on entering a room — carrying the last piece home is itself the trigger —
  *  and after finding a piece in the room that owns the fusion. */
-async function runReadyFusions(room: RoomSpec): Promise<void> {
-  // Both call sites are delayed, so the player may have left in the meantime;
-  // a cutscene staged into a room that is no longer on screen would place its
+async function runReadyFusions(room: RoomSpec): Promise<boolean> {
+  // Call sites are delayed, so the player may have left in the meantime; a
+  // cutscene staged into a room that is no longer on screen would place its
   // doll against the wrong geometry.
-  if (state.room !== room) return;
+  if (state.room !== room) return false;
   for (const f of room.fusions) {
-    if (state.cutscenePlaying) return;
+    if (state.cutscenePlaying) return false;
     if (state.fusionsDone.has(f.id)) continue;
     if (!fusionReady(f)) continue;
     await runFusion(f);
-    return; // runFusion hands control to the player; the rest wait their turn
+    // One at a time: runFusion hands control to the player, and restoreDoll
+    // comes back here when they dismiss it, so a backlog drains one cutscene
+    // per click instead of stacking overlays.
+    return true;
   }
+  return false;
 }
 
 function restoreDoll(f: FusionSpec, assembled: HTMLImageElement): void {
@@ -729,7 +733,12 @@ function restoreDoll(f: FusionSpec, assembled: HTMLImageElement): void {
   if (persistence) collect('dolls', f.id);
   state.cutscenePlaying = false;
   updateList();
-  maybeAdvance();
+  // Another doll may have been ready all along and waiting its turn. Only
+  // consider the room finished once nothing else wants to come together.
+  const room = state.room!;
+  void runReadyFusions(room).then((ran) => {
+    if (!ran) maybeAdvance();
+  });
 }
 
 /** Re-seat dolls assembled on an earlier visit. Deliberately fire-and-forget:

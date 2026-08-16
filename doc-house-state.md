@@ -232,14 +232,24 @@ Ordered. Each step is independently shippable and leaves a working game. **The o
 
 **8. Requests and final-pass mode.** The loop specified above, replacing the to-find list with the three-at-a-time panel plus the mess counter. *Must follow 3 and 6* — the request pool is read from `RoomState`, and while the auto-advance is still in place you'd be teleported out before a second visit could ever happen, so the anti-repeat ledger would never be exercised.
 
-### Cross-room fusion — the next step, and it needs a decision
+### Cross-room fusion — built
 
-Now that `dollParts` persists, three of the four dolls *could* be assembled. They still aren't, because `fusionReady()` asks the room, not the inventory. Two things have to be settled before that changes:
+**A doll comes together where the dollhouse is.** You find `curly-head` in the spare room and nothing happens; you carry it back to the children's bedroom, and the doll is made whole there. Confirmed as the intent, and it falls out of the data for free: a `FusionSpec` belongs to a room, and `restoredSpot` is already authored in that room's coordinates.
 
-**Where does a doll get assembled?** All four `FusionSpec`s live in the children's bedroom, and `restoredSpot` is authored for that room's geometry. If a fusion fired the moment you picked up `curly-head` in the spare room, the cutscene would play there and the doll would stand at coordinates that mean nothing in that room.
+Three pieces make it work:
 
-**My recommendation: it fires in the room that owns the fusion.** You find the head in the spare room, and nothing happens; you carry it back to the children's bedroom, and the doll comes together where the dollhouse is. That matches how the data is already authored, it costs nothing to build, and it gives revisiting a room a reason — which is the whole point of the visit/pass loop. It also means the check has to run on *entering* a room, not only on finding something.
+- `fusionReady()` asks `Inventory.dollParts`, not the room. Asking the room was the original bug — three of the four dolls keep their head in a different room from their body, so "is everything I can see found?" was vacuously true for a body on its own.
+- `OBJECT_IMAGES` maps every object id to its artwork across *all* rooms, because the cutscene has to draw a head that may have been found three rooms ago and is not in `state.objects`. A fusion naming a part no room contains now warns and stands down instead of dereferencing it.
+- `runReadyFusions(room)` runs on room entry as well as on find — carrying the last piece home is itself the trigger — and bails if the player has already left, so a cutscene can't stage itself into a room that is no longer on screen.
 
-The alternative — fuse wherever you're standing — needs a per-room `restoredSpot` and gets the player a doll sooner. Say which and I'll build it.
+The piece counter in the panel now counts carried parts too, so a doll reads "1 of 2 pieces" while its head is in your pocket rather than pretending you have nothing.
+
+### The key hook board — designed, not built
+
+The panel counters stay **per-room**: "keys — 2 of 5" is about the room you are standing in.
+
+The whole-house view belongs somewhere else — an inventory view, probably part of or alongside the map. Keys there are **16 hooks**, filled and unfilled, with the unfilled ones standing for keys not yet found; the `nail` asset already in `assets/` is the intended hook.
+
+Worth noting for whoever builds it: the house only contains **fifteen** of the sixteen. `key-13` is found in Jennie's room in `/in/`, which grants it through `grantKeys()`. So the board must read its filled state from the union of `readSharedKeys()` and not from the house's own finds — and one hook stays empty no matter how thoroughly the house is cleaned. That is the first place the `/in/` handoff becomes visible to the player rather than to the code.
 
 **Out of scope for this lane and untouched:** the map, key gating, mice, the zine and IndexedDB, lunes, every scene file, every special effect.

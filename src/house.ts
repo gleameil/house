@@ -42,6 +42,8 @@ import { EMPTY_ROOM_STATE } from './state/state.constants';
 const FOUND_MESSAGE_PLACEHOLDER = '[a message not yet written]';
 /** how long "Nothing here is abandoned now." stays up before the room changes */
 const ROOM_COMPLETE_PAUSE_MS = 1800;
+/** beat between a room appearing and a doll it can now assemble coming together */
+const FUSION_ON_ENTRY_DELAY_MS = 1200;
 const POEM_PLACEHOLDER = { title: '(untitled)', body: 'No poem has been placed here yet.' };
 
 interface LiveObject {
@@ -66,8 +68,18 @@ const state = {
   objects: [] as LiveObject[],
   container: null as HTMLDivElement | null,
   fusionsDone: new Set<string>(),
+  /** Inventory.dollParts, cached for the current room. Doll pieces are the one
+   *  kind of object a room has to know about without containing. */
+  dollParts: new Set<string>(),
   cutscenePlaying: false,
 };
+
+/** Every object's artwork, addressed by id across ALL rooms. A fusion needs to
+ *  draw a head that may have been found three rooms ago and is not in
+ *  state.objects, so it cannot look the image up from what is on screen. */
+const OBJECT_IMAGES = new Map<string, string>(
+  ROOMS.flatMap((room) => room.objects.map((spec) => [spec.id, spec.image] as const)),
+);
 
 // ---------------------------------------------------------------- alpha ---
 
@@ -323,33 +335,24 @@ function fusionFor(obj: LiveObject): FusionSpec | undefined {
   return state.room!.fusions.find((f) => f.id === (obj.spec as NamedSpec).partOf);
 }
 
-/** The parts of a fusion that are present IN THE CURRENT ROOM. Parts in other
- *  rooms are invisible here, because state.objects is only ever this room. */
-function fusionParts(f: FusionSpec): LiveObject[] {
-  return state.objects.filter((o) => (o.spec as NamedSpec).partOf === f.id);
-}
-
-/** A fusion may only run when every part it DECLARES is present in this room
- *  and found.
+/** A fusion may only run when every part it DECLARES is in the player's hands,
+ *  and when this is the room that owns the fusion.
  *
- *  Checking fusionParts().every() instead would ask "is everything I can see
- *  found?", which is vacuously true for a fusion whose other half is in
- *  another room — and three of the four are: curly-head is in the spare room,
- *  plus-size-head in the broom closet, evil-head in the master bathroom. Only
- *  ragged has both parts in the children's bedroom. Under the weaker check,
- *  finding curly-body alone satisfied the condition, runFusion() then did
- *  `state.objects.find(id === partIds[1])!.spec` on an object that is not in
- *  the room, and the resulting TypeError left cutscenePlaying stuck true
- *  inside a rejected promise — the room silently stopped accepting clicks.
+ *  Both halves matter. Asking the ROOM which parts are found was the old bug:
+ *  three of the four dolls keep their head in a different room from their
+ *  body, so "is everything I can see found?" was vacuously true for a body on
+ *  its own, and runFusion() then dereferenced a head that wasn't there.
+ *  Asking the INVENTORY fixes that and finally lets a doll be assembled from
+ *  pieces gathered across the house.
  *
- *  This restores the intended behaviour: ragged fuses, the other three wait.
- *  They stay waiting until dollParts outlives the room it was found in, which
- *  is migration step 4 in doc-house-state.md — and this predicate is the seam
- *  that step replaces. */
+ *  The room half is the design decision: a doll comes together where the
+ *  dollhouse is. You find the head in the spare room and nothing happens; you
+ *  carry it back to the children's bedroom, and the doll is made whole there.
+ *  This falls out of the data for free, because a FusionSpec belongs to a room
+ *  and its restoredSpot is authored in that room's coordinates. */
 function fusionReady(f: FusionSpec): boolean {
   if (f.fusesOnCompletion === false) return false;
-  const parts = fusionParts(f);
-  return f.partIds.every((id) => parts.some((p) => p.spec.id === id && p.found));
+  return f.partIds.every((id) => state.dollParts.has(id));
 }
 
 function allFound(): boolean {
@@ -389,8 +392,7 @@ function updateList(): void {
   for (const f of state.room!.fusions) {
     const li = document.getElementById(`to-find-fusion-${f.id}`);
     if (!li) continue;
-    const parts = fusionParts(f);
-    const foundCount = parts.filter((p) => p.found).length;
+    const foundCount = f.partIds.filter((id) => state.dollParts.has(id)).length;
     if (state.fusionsDone.has(f.id)) {
       li.textContent = f.name;
       li.classList.add('found');
@@ -539,15 +541,18 @@ function inventoryEntryFor(
 
 function find(obj: LiveObject): void {
   obj.found = true;
+  // Doll pieces are tracked in memory whether or not we are persisting, so a
+  // read-only session can still assemble what it finds within that session.
+  const isDollPart = obj.spec.kind === 'named' && (obj.spec as NamedSpec).partOf;
+  if (isDollPart) state.dollParts.add(obj.spec.id);
+
   if (persistence) {
     recordFound(state.room!.id, obj.spec.id);
     // Doll pieces go into the inventory as well as the room, because they are
     // the one kind of object whose meaning outlives the room it was found in:
     // the bodies are in the children's bedroom and three of the four heads are
     // not. They also cross to /in/ — see doc-house-state.md on the gorilla.
-    if (obj.spec.kind === 'named' && (obj.spec as NamedSpec).partOf) {
-      collect('dollParts', obj.spec.id);
-    }
+    if (isDollPart) collect('dollParts', obj.spec.id);
     const carried = inventoryEntryFor(obj.spec);
     if (carried) collect(carried.slot, carried.id);
   }
@@ -568,7 +573,7 @@ function find(obj: LiveObject): void {
 
     const f = fusionFor(obj);
     if (f && !state.fusionsDone.has(f.id) && fusionReady(f)) {
-      window.setTimeout(() => runFusion(f), 900);
+      window.setTimeout(() => void runReadyFusions(state.room!), 900);
       return; // the fusion's own completion decides whether the room is done
     }
     maybeAdvance();
@@ -594,10 +599,21 @@ function onRoomClick(event: MouseEvent): void {
 async function runFusion(f: FusionSpec): Promise<void> {
   state.cutscenePlaying = true;
 
+  const bodySrc = OBJECT_IMAGES.get(f.partIds[0]);
+  const headSrc = OBJECT_IMAGES.get(f.partIds[1]);
+  if (!bodySrc || !headSrc) {
+    // A fusion naming a part no room contains is an authoring error. Say so
+    // and stand down — the last thing that dereferenced a missing part left
+    // cutscenePlaying stuck true and killed the room.
+    console.warn(`[house] fusion "${f.id}" names a part no room contains; skipping`);
+    state.cutscenePlaying = false;
+    return;
+  }
+
   const [assembled, bodyImg, headImg] = await Promise.all([
     loadImage(f.assembled),
-    loadImage(state.objects.find((o) => o.spec.id === f.partIds[0])!.spec.image),
-    loadImage(state.objects.find((o) => o.spec.id === f.partIds[1])!.spec.image),
+    loadImage(bodySrc),
+    loadImage(headSrc),
   ]);
 
   const overlay = document.createElement('div');
@@ -687,6 +703,24 @@ function standDoll(f: FusionSpec, assembled: HTMLImageElement): void {
   placeAtSpot(doll, f.restoredSpot, assembled.naturalWidth, assembled.naturalHeight);
   state.container!.appendChild(doll);
   requestAnimationFrame(() => doll.classList.add('standing'));
+}
+
+/** Run any fusion this room owns whose parts are all in hand. Sequential and
+ *  guarded, because two cutscenes at once would fight over the overlay. Called
+ *  on entering a room — carrying the last piece home is itself the trigger —
+ *  and after finding a piece in the room that owns the fusion. */
+async function runReadyFusions(room: RoomSpec): Promise<void> {
+  // Both call sites are delayed, so the player may have left in the meantime;
+  // a cutscene staged into a room that is no longer on screen would place its
+  // doll against the wrong geometry.
+  if (state.room !== room) return;
+  for (const f of room.fusions) {
+    if (state.cutscenePlaying) return;
+    if (state.fusionsDone.has(f.id)) continue;
+    if (!fusionReady(f)) continue;
+    await runFusion(f);
+    return; // runFusion hands control to the player; the rest wait their turn
+  }
 }
 
 function restoreDoll(f: FusionSpec, assembled: HTMLImageElement): void {
@@ -791,8 +825,11 @@ export async function enterRoom(room: RoomSpec): Promise<void> {
   // Dolls live in the inventory, not in the room: Inventory.dolls is the
   // record of what has been made whole anywhere, and fusionsDone is this
   // room's view of it.
-  const dolls = new Set(persistence ? readInventory().dolls : []);
+  const inventory = persistence ? readInventory() : null;
+  const dolls = new Set(inventory?.dolls ?? []);
   state.fusionsDone = new Set(room.fusions.filter((f) => dolls.has(f.id)).map((f) => f.id));
+  // Parts persist across rooms; that is the whole point of them.
+  state.dollParts = new Set(inventory?.dollParts ?? []);
 
   state.objects = room.objects.map((spec, i) => {
     const img = images[i];
@@ -829,6 +866,9 @@ export async function enterRoom(room: RoomSpec): Promise<void> {
   container.addEventListener('click', onRoomClick);
   void standRestoredDolls(room);
   updateList();
+  // Walking in holding the last piece is itself the trigger. Delayed so the
+  // room is on screen before the cutscene takes it away again.
+  window.setTimeout(() => void runReadyFusions(room), FUSION_ON_ENTRY_DELAY_MS);
 }
 /** Boot. ensureSchema() runs before anything reads or writes state, so a
  *  stale save is dealt with once, up front, rather than half-read. */

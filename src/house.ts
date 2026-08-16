@@ -32,6 +32,7 @@ import {
   MUSIC_BOX_SOUND,
   POEM_CONTENT,
 } from './house.constants';
+import { renderMarkdown } from './markdown';
 
 const FOUND_MESSAGE_PLACEHOLDER = '[a message not yet written]';
 const POEM_PLACEHOLDER = { title: '(untitled)', body: 'No poem has been placed here yet.' };
@@ -247,8 +248,9 @@ function openPaperModal(obj: LiveObject): void {
   const title = document.createElement('h2');
   title.textContent = poem.title;
 
-  const body = document.createElement('p');
-  body.textContent = poem.body;
+  const body = document.createElement('div');
+  body.className = 'poem-body';
+  body.innerHTML = renderMarkdown(poem.body);
 
   card.append(closeButton, title, body);
   overlay.appendChild(card);

@@ -910,7 +910,7 @@ export async function enterRoom(room: RoomSpec): Promise<void> {
     placeAtSpot(obj.element, obj.spot, obj.naturalWidth, obj.naturalHeight);
   window.addEventListener('resize', sizeRoomToViewport);
   container.addEventListener('click', onRoomClick);
-  mountMice(container, room);
+  void mountMice(container, room);
   void standRestoredDolls(room);
   updateList();
   // Walking in holding the last piece is itself the trigger. Delayed so the

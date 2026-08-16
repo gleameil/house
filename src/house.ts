@@ -35,7 +35,7 @@ import {
 } from './house.constants';
 import { renderMarkdown } from './markdown';
 import { ensureSchema } from './state/store';
-import { recordFound, recordVisit } from './state/inventory';
+import { collect, readInventory, recordFound, recordVisit } from './state/inventory';
 import { EMPTY_ROOM_STATE } from './state/state.constants';
 
 const FOUND_MESSAGE_PLACEHOLDER = '[a message not yet written]';
@@ -346,6 +346,7 @@ function fusionParts(f: FusionSpec): LiveObject[] {
  *  is migration step 4 in doc-house-state.md — and this predicate is the seam
  *  that step replaces. */
 function fusionReady(f: FusionSpec): boolean {
+  if (f.fusesOnCompletion === false) return false;
   const parts = fusionParts(f);
   return f.partIds.every((id) => parts.some((p) => p.spec.id === id && p.found));
 }
@@ -510,7 +511,16 @@ function flourishMirror(): number {
 
 function find(obj: LiveObject): void {
   obj.found = true;
-  if (persistence) recordFound(state.room!.id, obj.spec.id);
+  if (persistence) {
+    recordFound(state.room!.id, obj.spec.id);
+    // Doll pieces go into the inventory as well as the room, because they are
+    // the one kind of object whose meaning outlives the room it was found in:
+    // the bodies are in the children's bedroom and three of the four heads are
+    // not. They also cross to /in/ — see doc-house-state.md on the gorilla.
+    if (obj.spec.kind === 'named' && (obj.spec as NamedSpec).partOf) {
+      collect('dollParts', obj.spec.id);
+    }
+  }
   const delay = FLOURISHES[obj.spec.id]?.(obj) ?? 0;
 
   window.setTimeout(() => {
@@ -636,7 +646,10 @@ async function runFusion(f: FusionSpec): Promise<void> {
   }, 2500);
 }
 
-function restoreDoll(f: FusionSpec, assembled: HTMLImageElement): void {
+/** Put a whole doll in the room at its authored spot. Used both at the end of
+ *  the fusion cutscene and on re-entering a room where the doll already
+ *  stands — a doll you assembled last visit is still there this visit. */
+function standDoll(f: FusionSpec, assembled: HTMLImageElement): void {
   const doll = document.createElement('img');
   doll.src = assembled.src;
   doll.className = 'restored-doll';
@@ -644,10 +657,29 @@ function restoreDoll(f: FusionSpec, assembled: HTMLImageElement): void {
   placeAtSpot(doll, f.restoredSpot, assembled.naturalWidth, assembled.naturalHeight);
   state.container!.appendChild(doll);
   requestAnimationFrame(() => doll.classList.add('standing'));
+}
+
+function restoreDoll(f: FusionSpec, assembled: HTMLImageElement): void {
+  standDoll(f, assembled);
   state.fusionsDone.add(f.id);
+  if (persistence) collect('dolls', f.id);
   state.cutscenePlaying = false;
   updateList();
   maybeAdvance();
+}
+
+/** Re-seat dolls assembled on an earlier visit. Deliberately fire-and-forget:
+ *  a doll that fails to load is a doll that is missing from the corner of a
+ *  room, not a reason to fail entering it. */
+async function standRestoredDolls(room: RoomSpec): Promise<void> {
+  for (const f of room.fusions) {
+    if (!state.fusionsDone.has(f.id)) continue;
+    try {
+      standDoll(f, await loadImage(f.assembled));
+    } catch {
+      /* the doll simply isn't there */
+    }
+  }
 }
 
 // ---------------------------------------------------------------- build ---
@@ -726,6 +758,12 @@ export async function enterRoom(room: RoomSpec): Promise<void> {
   const roomState = persistence ? recordVisit(room.id) : EMPTY_ROOM_STATE;
   const alreadyFound = new Set(roomState.found);
 
+  // Dolls live in the inventory, not in the room: Inventory.dolls is the
+  // record of what has been made whole anywhere, and fusionsDone is this
+  // room's view of it.
+  const dolls = new Set(persistence ? readInventory().dolls : []);
+  state.fusionsDone = new Set(room.fusions.filter((f) => dolls.has(f.id)).map((f) => f.id));
+
   state.objects = room.objects.map((spec, i) => {
     const img = images[i];
     const element = document.createElement('img');
@@ -759,6 +797,7 @@ export async function enterRoom(room: RoomSpec): Promise<void> {
     placeAtSpot(obj.element, obj.spot, obj.naturalWidth, obj.naturalHeight);
   window.addEventListener('resize', sizeRoomToViewport);
   container.addEventListener('click', onRoomClick);
+  void standRestoredDolls(room);
   updateList();
 }
 /** Boot. ensureSchema() runs before anything reads or writes state, so a

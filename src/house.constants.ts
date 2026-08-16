@@ -294,6 +294,15 @@ export interface FusionSpec {
   headLanding: { x: number; y: number };
   /** where the restored doll stands afterwards */
   restoredSpot: Spot;
+  /** Whether holding every part is enough to trigger the restoration.
+   *  Defaults to true, which is every doll but one.
+   *
+   *  The Gorilla Prince is the exception: he crosses into /in/ in two pieces
+   *  and is not assembled by the house at all. His fusion is deferred, not
+   *  impossible, and may land at the end of February. Set this false on any
+   *  fusion whose moment is chosen by the story rather than by the player
+   *  happening to hold the pieces. See doc-house-state.md. */
+  fusesOnCompletion?: boolean;
 }
 
 export interface RoomSpec {

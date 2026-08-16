@@ -28,6 +28,10 @@ import heart from 'url:../assets/heart.png';
 import roarSound from 'url:../assets/roar.mp3';
 import musicBoxSound from 'url:../assets/musicBox.mp3';
 
+import curly from 'url:../assets/christy.png';
+import plusSize from 'url:../assets/plus-size.png';
+import evil from 'url:../assets/evil.png';
+
 // broom closet
 import roomBroomCloset from 'url:../assets/room-broom-closet.jpg';
 import antifreeze from 'url:../assets/antifreeze.png';
@@ -1331,6 +1335,30 @@ const CHILDRENS_BEDROOM: RoomSpec = {
       headLanding: { x: 0.5, y: 0.115 },
       restoredSpot: { x: 0.328, y: 0.63, width: 0.048 },
     },
+    {
+      id: 'curly',
+      name: 'the curly-haired doll',
+      assembled: curly,
+      partIds: ['curly-body', 'curly-head'],
+      headLanding: { x: 0.5, y: 0.115 },
+      restoredSpot: { x: 0.328, y: 0.63, width: 0.048 },
+    },
+    {
+      id: 'plus-size',
+      name: 'the plus-sized doll',
+      assembled: plusSize,
+      partIds: ['plus-size-body', 'curly-head'],
+      headLanding: { x: 0.5, y: 0.115 },
+      restoredSpot: { x: 0.328, y: 0.63, width: 0.048 },
+    },
+    {
+      id: 'evil',
+      name: 'the evil doll',
+      assembled: evil,
+      partIds: ['evil-body', 'evil-head'],
+      headLanding: { x: 0.5, y: 0.115 },
+      restoredSpot: { x: 0.328, y: 0.63, width: 0.048 },
+    }
   ],
   sharedSpots: {
     almond: CHILDRENS_BEDROOM_ALMOND_SPOTS,
@@ -1566,6 +1594,7 @@ const MASTER_BATHROOM: RoomSpec = {
       name: "the evil doll's head",
       kind: 'named',
       image: evilHead,
+      partOf: 'evil',
       spots: [
         { x: 0.2, y: 0.99, width: 0.07, rotation: 48 }
       ]
@@ -1928,6 +1957,7 @@ const BROOM_CLOSET: RoomSpec = {
       name: "the plus-sized doll's head",
       kind: 'named',
       image: plusSizeHead,
+      partOf: 'plus-size',
       spots: [
         { x: 0.5, y: 0.11, width: 0.04, rotation: 90 },
         { x: 0.33, y: 0.986, width: 0.04 }
@@ -2152,6 +2182,7 @@ const SPARE_ROOM: RoomSpec = {
       name: "the curly-haired doll's head",
       kind: 'named',
       image: curlyHead,
+      partOf: 'curly',
       spots: [
         { x: 0.75, y: 0.94, width: 0.06, rotation: 80 },
         { x: 0.25, y: 0.5, width: 0.03 },

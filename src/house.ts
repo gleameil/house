@@ -34,8 +34,13 @@ import {
   POEM_CONTENT,
 } from './house.constants';
 import { renderMarkdown } from './markdown';
+import { ensureSchema } from './state/store';
+import { recordFound, recordVisit } from './state/inventory';
+import { EMPTY_ROOM_STATE } from './state/state.constants';
 
 const FOUND_MESSAGE_PLACEHOLDER = '[a message not yet written]';
+/** how long "Nothing here is abandoned now." stays up before the room changes */
+const ROOM_COMPLETE_PAUSE_MS = 1800;
 const POEM_PLACEHOLDER = { title: '(untitled)', body: 'No poem has been placed here yet.' };
 
 interface LiveObject {
@@ -47,6 +52,13 @@ interface LiveObject {
   alpha: Uint8ClampedArray;
   found: boolean;
 }
+
+/** False when ensureSchema() reported 'future' — the stored state was written
+ *  by a NEWER build than this one. The three sites deploy independently, so an
+ *  older /house/ can meet state written by a newer /in/. We read nothing and
+ *  write nothing in that case rather than trampling a save we don't understand.
+ *  See the schema table in doc-house-state.md. */
+let persistence = true;
 
 const state = {
   room: null as RoomSpec | null,
@@ -388,12 +400,30 @@ function updateList(): void {
     }
   }
   COUNTABLE_KINDS.forEach((k) => updateCounter(k))
-  
+
   if (allFound()) {
     const banner = document.getElementById('all-found');
     if (banner) banner.classList.add('visible');
-    enterRoom(ROOMS[(ROOMS.indexOf(state.room ?? ROOMS[ROOMS.length - 1]) + 1) % ROOMS.length])
   }
+}
+
+/** Advance to the next room, but only off the back of an ACTION that completed
+ *  it — never off the back of merely rendering it.
+ *
+ *  updateList() runs on every room entry, so once found-state persists,
+ *  advancing from there meant walking into a cleared room and being bounced
+ *  straight out of it; with every room cleared, that is an infinite tour.
+ *  Completing a room advances you. Revisiting a completed one does not.
+ *
+ *  The cyclic destination is still the dev placeholder it always was
+ *  (CLAUDE.md, Known Debt #2). Migration step 6 replaces it with a real exit;
+ *  this only moves WHEN it fires, not where it goes. The delay is so the
+ *  banner is legible first — it has always had a .visible class and has never
+ *  been on screen long enough for anyone to read it. */
+function maybeAdvance(): void {
+  if (!allFound()) return;
+  const next = ROOMS[(ROOMS.indexOf(state.room ?? ROOMS[ROOMS.length - 1]) + 1) % ROOMS.length];
+  window.setTimeout(() => enterRoom(next), ROOM_COMPLETE_PAUSE_MS);
 }
 
 // ----------------------------------------------------------- flourishes --
@@ -480,6 +510,7 @@ function flourishMirror(): number {
 
 function find(obj: LiveObject): void {
   obj.found = true;
+  if (persistence) recordFound(state.room!.id, obj.spec.id);
   const delay = FLOURISHES[obj.spec.id]?.(obj) ?? 0;
 
   window.setTimeout(() => {
@@ -498,7 +529,9 @@ function find(obj: LiveObject): void {
     const f = fusionFor(obj);
     if (f && !state.fusionsDone.has(f.id) && fusionReady(f)) {
       window.setTimeout(() => runFusion(f), 900);
+      return; // the fusion's own completion decides whether the room is done
     }
+    maybeAdvance();
   }, delay);
 }
 
@@ -614,6 +647,7 @@ function restoreDoll(f: FusionSpec, assembled: HTMLImageElement): void {
   state.fusionsDone.add(f.id);
   state.cutscenePlaying = false;
   updateList();
+  maybeAdvance();
 }
 
 // ---------------------------------------------------------------- build ---
@@ -687,6 +721,11 @@ export async function enterRoom(room: RoomSpec): Promise<void> {
 
   const spots = assignSpots(room);
 
+  // Persisted truth, read once per entry. state.objects[].found is a cache of
+  // this from here on, not the source of it.
+  const roomState = persistence ? recordVisit(room.id) : EMPTY_ROOM_STATE;
+  const alreadyFound = new Set(roomState.found);
+
   state.objects = room.objects.map((spec, i) => {
     const img = images[i];
     const element = document.createElement('img');
@@ -702,8 +741,12 @@ export async function enterRoom(room: RoomSpec): Promise<void> {
       naturalWidth: img.naturalWidth,
       naturalHeight: img.naturalHeight,
       alpha: cacheAlpha(img),
-      found: false,
+      found: alreadyFound.has(spec.id),
     };
+    // Objects tidied on a previous visit are already gone when you walk in —
+    // is-found directly, skipping being-found, so nothing plays its find
+    // animation at you for a second time.
+    if (live.found) element.classList.add('is-found');
     container.appendChild(element);
     return live;
   });
@@ -718,5 +761,23 @@ export async function enterRoom(room: RoomSpec): Promise<void> {
   container.addEventListener('click', onRoomClick);
   updateList();
 }
-// Choices at present: CHILDRENS_BEDROOM, MASTER_BATHROOM, BROOM_CLOSET, SPARE_ROOM, BALCONY, LADY_BATHROOM, MASTER_BEDROOM
-enterRoom(ROOMS[0]);
+/** Boot. ensureSchema() runs before anything reads or writes state, so a
+ *  stale save is dealt with once, up front, rather than half-read. */
+function openTheHouse(): void {
+  const outcome = ensureSchema();
+  if (outcome === 'future') {
+    persistence = false;
+    console.log(
+      'This browser is holding house state written by a newer version of ' +
+        'Evernost than this one. Nothing will be saved this visit, and ' +
+        'nothing already saved will be disturbed.',
+    );
+  }
+  if (outcome === 'wiped') {
+    console.log('The house has been rebuilt since you were last here. Starting over.');
+  }
+  // Choices at present: CHILDRENS_BEDROOM, MASTER_BATHROOM, BROOM_CLOSET, SPARE_ROOM, BALCONY, LADY_BATHROOM, MASTER_BEDROOM
+  enterRoom(ROOMS[0]);
+}
+
+openTheHouse();

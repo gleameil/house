@@ -803,3 +803,93 @@ body {
     transform: translate(-50%, -3.4rem) scale(1.05);
   }
 }
+
+/* src/rooms/map.ts — the placeholder map: a list of room links until the
+   drawn map with keyholes exists. No cursor tell here either; the entries
+   are plainly buttons and read as such without one. */
+
+#house-map {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.4rem;
+  background: var(--parchment);
+  color: var(--warm-black);
+  font-family: 'EB Garamond', Georgia, serif;
+}
+
+#house-map h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: normal;
+  font-style: italic;
+  letter-spacing: 0.04em;
+}
+
+#house-map ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  min-width: min(26rem, 82vw);
+}
+
+#house-map li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.5rem;
+  border-bottom: 1px solid var(--faded-ink);
+  padding-bottom: 0.35rem;
+}
+
+.map-room {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 1.15rem;
+  color: inherit;
+  cursor: default;
+  text-align: left;
+}
+
+.map-room:hover,
+.map-room:focus-visible {
+  font-style: italic;
+}
+
+.map-note {
+  font-size: 0.8rem;
+  color: var(--faded-ink);
+  white-space: nowrap;
+}
+
+/* The way back to the map from inside a room. */
+#to-the-map {
+  margin-top: 0.9rem;
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: inherit;
+  opacity: 0.65;
+  cursor: default;
+}
+
+#to-the-map:hover,
+#to-the-map:focus-visible {
+  opacity: 1;
+}
+
+/* The last pass counts rather than names — see renderList(). */
+#the-mess {
+  font-style: italic;
+}

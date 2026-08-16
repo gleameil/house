@@ -218,12 +218,15 @@ function missRipple(clientX: number, clientY: number): void {
 }
 
 function showFoundMessage(obj: LiveObject, message: string): void {
+  const text = message || FOUND_MESSAGE_PLACEHOLDER;
+  console.log(text);
+
   const rect = layoutRect(obj);
   const bubble = document.createElement('div');
   bubble.className = 'house almond-message';
   bubble.style.left = `${rect.cx}px`;
   bubble.style.top = `${rect.top}px`;
-  bubble.textContent = message || FOUND_MESSAGE_PLACEHOLDER;
+  bubble.textContent = text;
   document.body.appendChild(bubble);
   bubble.addEventListener('animationend', () => bubble.remove());
 }

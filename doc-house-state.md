@@ -1,8 +1,10 @@
 # `/house/` State
 
-**Files:** `src/state/state.constants.ts`, `src/state/store.ts`, `src/state/inventory.ts`, `src/state/state.selftest.ts`
+**Files:** `src/state/` (`state.constants.ts`, `store.ts`, `inventory.ts`), and the pure modules that read it — `src/rooms/requests.ts`, `gates.ts`, `placement.ts`, `key-board.ts`, `map.ts`. Each has a `*.selftest.ts` beside it.
 
-**Status:** designed and built, **wired into nothing**. `house.ts` is untouched; the game behaves exactly as it did this morning. The migration checklist at the end is the thing to execute.
+**Status:** **fully migrated.** Every step of the checklist at the end has landed, along with key gating, the hook board and the transition collage. What remains is not on this list: the `/in/` side of the handoff (Nora), and the drawn map that replaces the placeholder.
+
+**Scene changes go through `playTransition()`** (`src/transitions/collage.ts`) via the `goToRoom()` / `goToMap()` wrappers in `house.ts` — those two are the only player-reachable callers of `enterRoom()` and `showMap()`, and anything new that changes scenes should join them rather than calling through.
 
 ---
 
@@ -230,7 +232,11 @@ Ordered. Each step is independently shippable and leaves a working game. **The o
 
 *Original note:* It currently calls `enterRoom(ROOMS[i+1])` cyclically on `allFound()`, and it does so in the same tick it reveals the "Nothing here is abandoned now" banner — so the banner has never actually been seen. This is the one step that *removes* behaviour, so it goes late, and **not before a real room-to-room flow exists** — otherwise you clear a room and nothing happens, and the game is unplayable. Pair it with the same commit that introduces the exit, whatever that turns out to be (map, key gate, or just a door).
 
-**7. Position persistence behind the flag. STILL OPEN — the only migration step left.** `assignSpots()` reads `RoomState.spots` when `persistObjectPositions` is true, and `recordSpots()` writes them on first assignment. *Must follow 3*, same record. Expect this one to look like a bug the first time you see it — the room stops re-shuffling.
+**7. ~~Position persistence behind the flag.~~ Done.** `assignSpots()` reads `RoomState.spots` when `persistObjectPositions` is true and writes them back; the two rules with judgement in them live in `src/rooms/placement.ts` with 13 assertions. Expect it to look like a bug the first time you see it — the room stops re-shuffling.
+
+Three things worth knowing before changing it. **A stored spot is only reused if the room still authors it** — move an object's spots in `house.constants.ts` and a player's stored position is stale, and honouring it silently would make the edit look like it did nothing, which reads as broken code rather than as an old save. **Spots compare by value**, because the stored copy came back through JSON and is a different object from the authored one. And **the balcony's scraps are carved out**: they are authored to blow around, `reshuffleScraps()` moves them on every click, so pinning them would fight the room's character. The carve-out lives in exactly one place.
+
+**With this, the checklist is complete.**
 
 **8. ~~Requests and final-pass mode.~~ Done.** `src/rooms/requests.ts` holds the pure selection logic with 26 assertions; `renderList()` in `house.ts` renders the two modes. The panel shows the few things the room has asked for, or — in the last pass — `the mess — x of y` and no names at all. Fusion lines and the kind-counters show in both modes.
 
@@ -248,12 +254,44 @@ Three pieces make it work:
 
 The piece counter in the panel now counts carried parts too, so a doll reads "1 of 2 pieces" while its head is in your pocket rather than pretending you have nothing.
 
-### The key hook board — designed, not built
+### The key hook board — built
 
 The panel counters stay **per-room**: "keys — 2 of 5" is about the room you are standing in.
 
-The whole-house view belongs somewhere else — an inventory view, probably part of or alongside the map. Keys there are **16 hooks**, filled and unfilled, with the unfilled ones standing for keys not yet found; the `nail` asset already in `assets/` is the intended hook.
+The whole-house view is `src/rooms/key-board.ts`, hung under the map: **16 hooks**, filled and unfilled, the unfilled ones standing for keys not yet found, drawn with the `nail` asset already in `assets/`.
 
-Worth noting for whoever builds it: the house only contains **fifteen** of the sixteen. `key-13` is found in Jennie's room in `/in/`, which grants it through `grantKeys()`. So the board must read its filled state from the union of `readSharedKeys()` and not from the house's own finds — and one hook stays empty no matter how thoroughly the house is cleaned. That is the first place the `/in/` handoff becomes visible to the player rather than to the code.
+It reads `readSharedKeys()` — the shared union, **not** the house's own finds — because the house only contains **fifteen** of the sixteen. `key-13` is found in Jennie's room in `/in/`, which grants it through `grantKeys()`. So one hook stays empty no matter how thoroughly the house is cleaned. That is the first place the `/in/` handoff becomes visible to a player rather than to the code, and it is the point of it.
+
+---
+
+## Key gating
+
+**The key graph is a chain with exactly one entrance,** read off `key_message-opens-asset-foundIn.csv` and confirmed against the placed `KeySpec`s:
+
+```
+/in/  --key-13-->  broom closet  --key-12-->  master bathroom
+                                 --key-8 -->  spare room
+                                                --key-2 --> children's room
+                                                --key-14--> balcony
+```
+
+Every room that exists is reachable, nothing is orphaned, and no room needs a key found behind itself. That is authored, not lucky — the CSV's "Found in" column is a dependency graph. The other ten placed keys open rooms that do not exist yet; `gates.unbuilt()` names them so nobody later "fixes" them.
+
+The rules live in `src/rooms/gates.ts`, pure and self-tested (19 assertions). `map.ts` derives the gate table from the placed `KeySpec`s, so **placing a key is the only step in adding a lock**, and adds `EXTERNAL_GATES` for `key-13`, which has no `KeySpec` at all because it is never found in the house.
+
+Two more flags in `HOUSE_CONFIG`, and the second is a real open decision:
+
+| | Default | Meaning |
+|---|---|---|
+| `keyGating` | `true` | a room opens only once the player holds a key that names it |
+| `frontDoor` | `'broom-closet'` | the one room that opens without a key |
+
+`frontDoor` is the "graceful absence" policy applied where a player can see it: someone who has never opened `/in/` is invited in rather than locked out. **Setting it to `null` makes the house genuinely entered through Jennie's room** — one word, and a decision about whether the house is playable standalone. Nora's call.
+
+To exercise the chain before `/in/` grants anything, write the array the handoff describes:
+
+```js
+localStorage.setItem('evernost:shared:keys', JSON.stringify(['key-13','key-12','key-8']))
+```
 
 **Out of scope for this lane and untouched:** the map, key gating, mice, the zine and IndexedDB, lunes, every scene file, every special effect.

@@ -45,6 +45,7 @@ import {
   messProgress,
   roundSatisfied,
 } from './rooms/requests';
+import { playTransition, nextMirrorFragment } from './transitions/collage';
 import { mountMice } from './mice/mice';
 import { ensureSchema } from './state/store';
 import {
@@ -493,6 +494,24 @@ function updateList(): void {
   }
 }
 
+/** The single seam every scene change in the game passes through
+ *  (E-transition-collage.md). enterRoom() and showMap() are the two things
+ *  that ever mount a scene; these two wrappers are the only callers of
+ *  either that a player action reaches, everywhere in this file and in
+ *  map.ts (which gets goToRoom handed to it as its onChoose callback, below
+ *  and in openTheHouse()). playTransition() covers the screen with the
+ *  drifting collage, calls the wrapped function while covered, and fades
+ *  back in on whatever it built — see collage.ts for the timing and the
+ *  skip behaviour. Fire-and-forget: nothing here needs to wait on a scene
+ *  change finishing to keep running. */
+function goToRoom(room: RoomSpec): void {
+  void playTransition(() => enterRoom(room));
+}
+
+function goToMap(): void {
+  void playTransition(() => showMap(goToRoom));
+}
+
 /** A room is finished. Show the banner long enough to read, then return to the
  *  map — the player chooses where to go next.
  *
@@ -502,11 +521,15 @@ function updateList(): void {
  *  ACTION that completed the room, never off the back of merely rendering it:
  *  updateList() runs on every entry, so once found-state persisted, advancing
  *  from there meant walking into a cleared room and being bounced straight out
- *  of it — with every room cleared, an infinite tour. */
+ *  of it — with every room cleared, an infinite tour.
+ *
+ *  The pause happens first, banner visible and uncovered; the transition
+ *  collage begins only after it, on the goToMap() call below — "banner ->
+ *  hold -> fade -> collage -> next scene", per the brief. */
 function maybeAdvance(): void {
   if (!allFound()) return;
   window.setTimeout(() => {
-    if (state.room && allFound()) showMap(enterRoom);
+    if (state.room && allFound()) goToMap();
   }, ROOM_COMPLETE_PAUSE_MS);
 }
 
@@ -586,11 +609,27 @@ function flourishMusicBox(obj: LiveObject): number {
   return 1400;
 }
 
-function flourishMirror(): number {
+/** The mirror's white flash, and — new here — one line briefly revealed
+ *  inside it. Jenny's register, not the fossil's: see the register-split
+ *  comment atop transitions/collage.ts for why the mirror draws from its own
+ *  separate pool rather than the one the scene transitions use. One fragment
+ *  at a time, cycling in order (nextMirrorFragment), so a player who clicks
+ *  the mirror repeatedly gets a legible sequence instead of noise. */
+function flourishMirror(obj: LiveObject): number {
   const flash = document.createElement('div');
   flash.className = 'house mirror-flash';
   state.container!.appendChild(flash);
   flash.addEventListener('animationend', () => flash.remove());
+
+  const rect = layoutRect(obj);
+  const text = document.createElement('div');
+  text.className = 'house mirror-flash-text';
+  text.textContent = nextMirrorFragment();
+  text.style.left = `${rect.cx}px`;
+  text.style.top = `${rect.cy}px`;
+  document.body.appendChild(text);
+  text.addEventListener('animationend', () => text.remove());
+
   return 700;
 }
 
@@ -902,7 +941,7 @@ function buildList(room: RoomSpec): HTMLElement {
   back.type = 'button';
   back.id = 'to-the-map';
   back.textContent = 'the rest of the house';
-  back.addEventListener('click', () => showMap(enterRoom));
+  back.addEventListener('click', () => goToMap());
   panel.appendChild(back);
 
   return panel;
@@ -1087,10 +1126,14 @@ function openTheHouse(): void {
   if (outcome === 'wiped') {
     console.log('The house has been rebuilt since you were last here. Starting over.');
   }
-  // The map is the front door now. To jump straight into a room while working
-  // on it, call enterRoom(ROOMS[n]) here instead — the old dev convenience,
-  // kept deliberately.
-  showMap(enterRoom);
+  // The map is the front door now. Shown directly, not through goToMap() —
+  // there is no prior scene on screen yet for the collage to fade from, only
+  // a blank page, so a transition here would just be a delay with nothing to
+  // ease between. Choosing a room from this first map view still goes
+  // through the collage, via goToRoom. To jump straight into a room while
+  // working on it, call enterRoom(ROOMS[n]) here instead — the old dev
+  // convenience, kept deliberately.
+  showMap(goToRoom);
 }
 
 openTheHouse();

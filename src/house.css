@@ -358,6 +358,47 @@ body {
   }
 }
 
+/* The mirror's one line — Jenny's register, not the fossil's. See the long
+   comment atop src/transitions/collage.ts on why the two text pools (and
+   their moments) are kept apart. Dark text with a light glow, the opposite
+   of .almond-message, because this reads against the flash's own brightness
+   rather than against the room. */
+.mirror-flash-text {
+  position: fixed;
+  transform: translate(-50%, -50%);
+  max-width: 15rem;
+  padding: 0.2rem 0.5rem;
+  font-style: italic;
+  font-size: 0.95rem;
+  text-align: center;
+  color: var(--warm-black);
+  text-shadow: 0 0 0.5rem rgba(255, 255, 255, 0.9), 0 0 0.9rem rgba(255, 255, 255, 0.7);
+  pointer-events: none;
+  white-space: pre-wrap;
+  animation: mirror-text-flash 0.7s ease-in;
+}
+
+@keyframes mirror-text-flash {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mirror-flash-text {
+    animation-duration: 0.3s;
+  }
+}
+
 .picture-crossfade {
   position: fixed;
   pointer-events: none;
@@ -945,5 +986,94 @@ button.map-room:focus-visible {
 @media (max-width: 640px) {
   .key-hooks {
     grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ------------------------------------------------------- scene transition -- */
+/* src/transitions/collage.ts. Deliberately NOT part of the '.house' class:
+   enterRoom() and showMap() both tear down every '.house' element as the
+   first thing they do, and this overlay has to keep covering the screen
+   while that teardown-and-rebuild happens underneath it — being swept away
+   in the same pass would defeat the whole point. It removes itself, on its
+   own timeline, from collage.ts. z-index sits above everything else in the
+   game (the fusion and paper overlays are 10, the sound toggle is 20) so it
+   reliably covers whichever of those happens to be on screen when a scene
+   changes. No cursor tell needed to click through it — it fills the
+   viewport, so there is nothing under it a hover could give away. */
+.scene-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  overflow: hidden;
+  background: var(--warm-black);
+  opacity: 0;
+  cursor: default;
+  transition: opacity 0.4s ease;
+}
+
+.scene-transition.visible {
+  opacity: 1;
+}
+
+/* The fossil's register, drifting. Position and rotation are set per-element
+   from collage.ts (left/top/--drift-rotate); duration and delay too, so
+   prefers-reduced-motion can shorten and de-stagger them without a second
+   code path. Not centered, not a list — text can and does overlap text. */
+.transition-fragment {
+  position: absolute;
+  max-width: 20rem;
+  padding: 0 0.4rem;
+  font-style: italic;
+  font-size: clamp(0.85rem, 1.6vw, 1.15rem);
+  line-height: 1.4;
+  color: var(--parchment);
+  text-align: center;
+  opacity: 0;
+  animation-name: fragment-drift;
+  animation-timing-function: ease-in-out;
+  animation-fill-mode: both;
+}
+
+@keyframes fragment-drift {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(var(--drift-rotate, 0deg)) translateY(0.8rem)
+      scale(0.96);
+  }
+  18% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 0.85;
+    transform: translate(-50%, -50%) rotate(var(--drift-rotate, 0deg)) translateY(-0.5rem)
+      scale(1);
+  }
+  85% {
+    opacity: 0.65;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(var(--drift-rotate, 0deg)) translateY(-1.6rem)
+      scale(1.03);
+  }
+}
+
+/* prefers-reduced-motion: no drift, just a static hold — see
+   playTransition() in collage.ts, which also shortens the timing. */
+.transition-fragment.reduced-motion {
+  animation-name: fragment-hold;
+  animation-timing-function: ease;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes fragment-hold {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0.85;
   }
 }

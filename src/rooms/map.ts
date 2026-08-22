@@ -12,12 +12,14 @@
 // navigation. Finishing a room now returns you here, and every room has a way
 // back here at any time.
 //
-// NOT YET GATED. KeySpec.roomId exists and is populated, but no key unlocks
-// anything; every room is listed and reachable. Gating is the next thing this
-// file grows, and it belongs here rather than in house.ts.
+// GATED as of key gating landing. Which room a key opens is KeySpec.roomId;
+// the graph and the rules live in gates.ts, which is pure and self-tested.
+// This file only derives the gate table from ROOMS and renders the result.
 
-import { ROOMS, RoomSpec } from '../house.constants';
-import { readRoomState } from '../state/inventory';
+import { AnyHiddenObjectSpec, KeySpec, ROOMS, RoomSpec } from '../house.constants';
+import { readRoomState, readSharedKeys } from '../state/inventory';
+import { EXTERNAL_GATES, GateSpec, isUnlocked } from './gates';
+import { keyBoard } from './key-board';
 
 export interface MapEntry {
   room: RoomSpec;
@@ -25,14 +27,40 @@ export interface MapEntry {
   remaining: number;
   total: number;
   visited: boolean;
+  unlocked: boolean;
+}
+
+/** Every gate in the game: one per placed key that names a room, plus the
+ *  external gates no house object can satisfy. Most of these name rooms that
+ *  do not exist yet — see gates.unbuilt(). Derived rather than written down so
+ *  that placing a key is the only step in adding a lock. */
+export function houseGates(): GateSpec[] {
+  const fromKeys: GateSpec[] = [];
+  for (const room of ROOMS) {
+    for (const spec of room.objects as AnyHiddenObjectSpec[]) {
+      if (spec.kind !== 'key') continue;
+      const roomId = (spec as KeySpec).roomId;
+      if (roomId) fromKeys.push({ keyId: spec.id, roomId });
+    }
+  }
+  return [...EXTERNAL_GATES, ...fromKeys];
 }
 
 export function roomsForMap(): MapEntry[] {
+  const gates = houseGates();
+  // The union, not the house's own finds: key-13 is granted by /in/.
+  const held = readSharedKeys();
   return ROOMS.map((room) => {
     const state = readRoomState(room.id);
     const found = new Set(state.found);
     const remaining = room.objects.filter((o) => !found.has(o.id)).length;
-    return { room, remaining, total: room.objects.length, visited: state.visits > 0 };
+    return {
+      room,
+      remaining,
+      total: room.objects.length,
+      visited: state.visits > 0,
+      unlocked: isUnlocked(room.id, gates, held),
+    };
   });
 }
 
@@ -56,15 +84,26 @@ export function showMap(onChoose: (room: RoomSpec) => void): void {
   for (const entry of roomsForMap()) {
     const item = document.createElement('li');
 
-    const link = document.createElement('button');
-    link.type = 'button';
-    link.className = 'map-room';
-    link.textContent = entry.room.name;
-    link.addEventListener('click', () => onChoose(entry.room));
+    // A shut room is a span, not a disabled button: there is nothing to press,
+    // and a disabled control still announces itself as a control.
+    let link: HTMLElement;
+    if (entry.unlocked) {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'map-room';
+      button.textContent = entry.room.name;
+      button.addEventListener('click', () => onChoose(entry.room));
+      link = button;
+    } else {
+      link = document.createElement('span');
+      link.className = 'map-room map-room-shut';
+      link.textContent = entry.room.name;
+    }
 
     const note = document.createElement('span');
     note.className = 'map-note';
-    if (!entry.visited) note.textContent = 'not yet opened';
+    if (!entry.unlocked) note.textContent = 'still shut';
+    else if (!entry.visited) note.textContent = 'not yet opened';
     else if (entry.remaining === 0) note.textContent = 'nothing here is abandoned now';
     else note.textContent = `the mess — ${entry.remaining} of ${entry.total}`;
 
@@ -72,5 +111,6 @@ export function showMap(onChoose: (room: RoomSpec) => void): void {
     list.appendChild(item);
   }
   panel.appendChild(list);
+  panel.appendChild(keyBoard());
   document.body.appendChild(panel);
 }

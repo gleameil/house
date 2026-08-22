@@ -859,9 +859,15 @@ body {
   text-align: left;
 }
 
-.map-room:hover,
-.map-room:focus-visible {
+button.map-room:hover,
+button.map-room:focus-visible {
   font-style: italic;
+}
+
+/* A room whose key you do not have. Rendered as a span, not a disabled
+   button — there is nothing to press. */
+.map-room-shut {
+  color: var(--faded-ink);
 }
 
 .map-note {
@@ -892,4 +898,52 @@ body {
 /* The last pass counts rather than names — see renderList(). */
 #the-mess {
   font-style: italic;
+}
+
+/* src/rooms/key-board.ts — sixteen hooks, filled and unfilled, hung under the
+   map. One of them stays empty however thoroughly the house is cleaned: key-13
+   is found in Jennie's room in /in/, not here. */
+
+#key-board {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.key-hooks {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 0.35rem 0.5rem;
+  min-width: min(26rem, 82vw);
+}
+
+.key-hook {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.6rem;
+}
+
+.key-hook img {
+  max-width: 100%;
+  max-height: 100%;
+  /* An empty hook is a nail: present, but not the thing you are looking at. */
+  opacity: 0.3;
+}
+
+.key-hook-filled img {
+  opacity: 1;
+}
+
+.key-board-count {
+  font-size: 0.8rem;
+  color: var(--faded-ink);
+}
+
+@media (max-width: 640px) {
+  .key-hooks {
+    grid-template-columns: repeat(4, 1fr);
+  }
 }

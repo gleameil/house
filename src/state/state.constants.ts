@@ -160,6 +160,19 @@ export interface HouseConfig {
    *  `evernostianNow` and `limitOfFebruaryForesight` in unprefixed
    *  localStorage). false: everything is always available. Default false. */
   dateGating: boolean;
+  /** true: a room opens only once the player holds a key that names it.
+   *  false: every room is always reachable, which is what house.ts did before
+   *  gating landed. Default true. See src/rooms/gates.ts for the graph. */
+  keyGating: boolean;
+  /** The one room that opens without a key, so a player who has never been to
+   *  /in/ is invited rather than locked out — the "graceful absence" policy in
+   *  doc-house-state.md, applied where it is actually visible to a player.
+   *
+   *  The house's real front door is key-13, which /in/ grants. Set this to
+   *  null once /in/ reliably grants it and the house should be genuinely
+   *  entered through Jennie's room. That is a one-word change and a real
+   *  decision about whether the house can be played on its own. */
+  frontDoor: string | null;
   /** how many objects a room names at once — Nora's instinct is three */
   requestsPerRound: number;
   /** how many rounds of that a single visit may run before the visit ends;
@@ -170,6 +183,8 @@ export interface HouseConfig {
 export const HOUSE_CONFIG: HouseConfig = {
   persistObjectPositions: true,
   dateGating: false,
+  keyGating: true,
+  frontDoor: 'broom-closet',
   requestsPerRound: 3,
   roundsPerVisit: 1,
 };

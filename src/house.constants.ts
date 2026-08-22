@@ -2418,6 +2418,27 @@ const BALCONY: RoomSpec = {
 }; // scribbles, Doris doll
 
 export const COUNTABLE_KINDS: HiddenObjectKind[] = ['key', 'almond', 'scrap', 'paper']
+/** Every key's artwork, by the id the shared inventory uses — hyphenated
+ *  `key-1` … `key-16`, which is the contract /in/ reads (doc-house-state.md,
+ *  "The /in/ handoff"), not the `key1` of the asset filename.
+ *
+ *  All sixteen are here, including key-13, which has no KeySpec because it is
+ *  found in Jennie's room in /in/ and never in the house. The hook board has
+ *  to be able to draw it once /in/ grants it. */
+export const KEY_ART: Record<string, string> = {
+  'key-1': key1, 'key-2': key2, 'key-3': key3, 'key-4': key4,
+  'key-5': key5, 'key-6': key6, 'key-7': key7, 'key-8': key8,
+  'key-9': key9, 'key-10': key10, 'key-11': key11, 'key-12': key12,
+  'key-13': key13, 'key-14': key14, 'key-15': key15, 'key-16': key16,
+};
+
+/** The order the hooks hang in, and the whole set the board counts against. */
+export const ALL_KEY_IDS = Object.keys(KEY_ART);
+
+/** An empty hook. The nail is already an object in the broom closet; the key
+ *  board reuses its art rather than drawing a second one. */
+export const HOOK_ART = nail;
+
 export const ROOMS = [BROOM_CLOSET, MASTER_BATHROOM, SPARE_ROOM, BALCONY, CHILDRENS_BEDROOM];
 
 // ------------------------------------------------------------------ mice ---

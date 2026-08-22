@@ -88,6 +88,12 @@ let persistence = true;
 
 const state = {
   room: null as RoomSpec | null,
+  /** Bumped by goToRoom/goToMap the moment a scene change is requested, before
+   *  the transition even starts. Anything that schedules work against "am I
+   *  still where I was?" captures this and compares — `state.room` cannot
+   *  answer that question, because it holds the room you were in until the
+   *  next one finishes mounting, which is long after you asked to leave. */
+  scene: 0,
   objects: [] as LiveObject[],
   container: null as HTMLDivElement | null,
   fusionsDone: new Set<string>(),
@@ -548,10 +554,12 @@ function updateList(): void {
  *  skip behaviour. Fire-and-forget: nothing here needs to wait on a scene
  *  change finishing to keep running. */
 function goToRoom(room: RoomSpec): void {
+  state.scene++;
   void playTransition(() => enterRoom(room));
 }
 
 function goToMap(): void {
+  state.scene++;
   void playTransition(() => showMap(goToRoom));
 }
 
@@ -571,8 +579,12 @@ function goToMap(): void {
  *  hold -> fade -> collage -> next scene", per the brief. */
 function maybeAdvance(): void {
   if (!allFound()) return;
+  // The way back to the map stays live during this pause — deliberately, the
+  // player is allowed to walk out on their own. If they do, this must not fire
+  // as well, or they get a second, pointless transition from the map to itself.
+  const scene = state.scene;
   window.setTimeout(() => {
-    if (state.room && allFound()) goToMap();
+    if (state.scene === scene && state.room && allFound()) goToMap();
   }, ROOM_COMPLETE_PAUSE_MS);
 }
 
@@ -774,7 +786,14 @@ function find(obj: LiveObject): void {
 
     const f = fusionFor(obj);
     if (f && !state.fusionsDone.has(f.id) && fusionReady(f)) {
-      window.setTimeout(() => void runReadyFusions(state.room!), 900);
+      // Same reasoning as maybeAdvance: 900ms is long enough to leave in, and
+      // runReadyFusions' own `state.room !== room` guard cannot catch it —
+      // state.room still holds this room while the next scene mounts.
+      const scene = state.scene;
+      window.setTimeout(() => {
+        if (state.scene !== scene) return;
+        void runReadyFusions(state.room!);
+      }, 900);
       return; // the fusion's own completion decides whether the room is done
     }
     maybeAdvance();

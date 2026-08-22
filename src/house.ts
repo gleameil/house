@@ -55,9 +55,11 @@ import {
   readRoomState,
   recordFound,
   recordRequested,
+  recordSpots,
   recordVisit,
 } from './state/inventory';
-import { InventorySlot } from './state/state.constants';
+import { InventorySlot, StoredSpot } from './state/state.constants';
+import { rememberedSpot, sameSpot } from './rooms/placement';
 import { EMPTY_ROOM_STATE, HOUSE_CONFIG, RoomState } from './state/state.constants';
 
 const FOUND_MESSAGE_PLACEHOLDER = '[a message not yet written]';
@@ -213,6 +215,18 @@ function randomSpot(avoid?: { x: number; y: number }): Spot {
 function assignSpots(room: RoomSpec): Map<string, Spot> {
   const assigned = new Map<string, Spot>();
 
+  // HOUSE_CONFIG.persistObjectPositions — an object sits where it sat last
+  // visit, rather than the room re-rolling on every entry. Expect this to look
+  // like a bug the first time you see it: the room stops re-shuffling.
+  //
+  // Deliberately NOT applied to the 'random' strategy, which today is only the
+  // balcony's scraps. Those are authored to blow around — reshuffleScraps()
+  // moves them on every click — so pinning them would fight the room's whole
+  // character. If that carve-out ever stops being right, this is the only
+  // place it lives.
+  const remembering = persistence && HOUSE_CONFIG.persistObjectPositions;
+  const stored = remembering ? (readRoomState(room.id).spots ?? {}) : {};
+
   const sharedPoolKinds = new Set<HiddenObjectKind>();
   for (const spec of room.objects) {
     if (HIDDEN_OBJECT_KINDS[spec.kind].placementStrategy === 'sharedSpotList') {
@@ -229,8 +243,23 @@ function assignSpots(room: RoomSpec): Map<string, Spot> {
           `"${kind}" but only ${pool.length} shared spots for them.`,
       );
     }
-    const pick = shuffled(pool);
-    objectsOfKind.forEach((spec, i) => assigned.set(spec.id, pick[i]));
+    // Hand back remembered spots first, then deal the rest of the pool out
+    // among whoever is left. Taking the remembered ones out of circulation is
+    // what stops a newly-added object landing on top of one — the case that
+    // arises the moment a room gains an object after a player has visited it.
+    const taken: Spot[] = [];
+    const unplaced: typeof objectsOfKind = [];
+    for (const spec of objectsOfKind) {
+      const spot = rememberedSpot(stored, spec.id, pool);
+      if (spot && !taken.some((t) => sameSpot(t, spot))) {
+        assigned.set(spec.id, spot);
+        taken.push(spot);
+      } else {
+        unplaced.push(spec);
+      }
+    }
+    const free = shuffled(pool.filter((spot) => !taken.some((t) => sameSpot(t, spot))));
+    unplaced.forEach((spec, i) => assigned.set(spec.id, free[i]));
   }
 
   for (const spec of room.objects) {
@@ -238,10 +267,24 @@ function assignSpots(room: RoomSpec): Map<string, Spot> {
     const strategy = HIDDEN_OBJECT_KINDS[spec.kind].placementStrategy;
     if (strategy === 'individualSpotLists') {
       const spots = (spec as NamedSpec).spots;
-      assigned.set(spec.id, spots[Math.floor(Math.random() * spots.length)]);
+      const spot = rememberedSpot(stored, spec.id, spots);
+      assigned.set(spec.id, spot ?? spots[Math.floor(Math.random() * spots.length)]);
     } else {
       assigned.set(spec.id, randomSpot());
     }
+  }
+
+  if (remembering) {
+    const toStore: Record<string, StoredSpot> = {};
+    for (const [id, spot] of assigned) {
+      // Scraps are omitted on purpose — see the carve-out above.
+      const strategy = HIDDEN_OBJECT_KINDS[
+        room.objects.find((o) => o.id === id)!.kind
+      ].placementStrategy;
+      if (strategy === 'random') continue;
+      toStore[id] = { x: spot.x, y: spot.y, width: spot.width, rotation: spot.rotation };
+    }
+    recordSpots(room.id, toStore);
   }
 
   return assigned;

@@ -358,6 +358,75 @@ body {
   }
 }
 
+/* The mirror's one line — Jenny's register, not the fossil's. See the long
+   comment atop src/transitions/collage.ts on why the two text pools (and
+   their moments) are kept apart. Dark text with a light glow, the opposite
+   of .almond-message, because this reads against the flash's own brightness
+   rather than against the room. */
+.mirror-flash-text {
+  position: fixed;
+  transform: translate(-50%, -50%);
+  max-width: 15rem;
+  padding: 0.2rem 0.5rem;
+  font-style: italic;
+  font-size: 0.95rem;
+  text-align: center;
+  color: var(--warm-black);
+  text-shadow: 0 0 0.5rem rgba(255, 255, 255, 0.9), 0 0 0.9rem rgba(255, 255, 255, 0.7);
+  pointer-events: none;
+  white-space: pre-wrap;
+  animation: mirror-text-flash 0.7s ease-in;
+}
+
+@keyframes mirror-text-flash {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  55% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mirror-flash-text {
+    animation-duration: 0.3s;
+  }
+}
+
+.picture-crossfade {
+  position: fixed;
+  pointer-events: none;
+  opacity: 0;
+  /* height follows the restored drawing's own proportions; flourishPicture
+     supplies only the width and centres it vertically. */
+  height: auto;
+  animation: picture-restore 2.2s ease-in-out both;
+}
+
+/* broken (obj.element, underneath) -> restored (this overlay) -> broken:
+   the overlay fades all the way in, holds, then fades back out, leaving
+   the ordinary broken art visible again for the found-fade that follows. */
+@keyframes picture-restore {
+  0% {
+    opacity: 0;
+  }
+  35% {
+    opacity: 1;
+  }
+  65% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
 /* ------------------------------------------------------------- paper modal -- */
 
 #paper-overlay {
@@ -436,6 +505,96 @@ body {
 
 #paper-close:hover {
   color: var(--faded-ink);
+}
+
+/* -------------------------------------------------------- sound toggle -- */
+/* src/effects/sound-toggle.ts. Deliberately NOT cursor: pointer — see the
+   rule at the top of this file. Emoji placeholder today; swapping in
+   sound-on.png / sound-off.png later is a change to that file only, not
+   to these rules. */
+
+.sound-toggle {
+  position: fixed;
+  left: 1rem;
+  bottom: 1rem;
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  border: 1px solid var(--warm-black);
+  border-radius: 50%;
+  background: var(--parchment);
+  color: var(--warm-black);
+  font-size: 1.2rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  box-shadow: 0.15rem 0.15rem 0 rgba(58, 43, 30, 0.35);
+  z-index: 20;
+  opacity: 0.85;
+  transition: opacity 0.2s ease;
+}
+
+.sound-toggle:hover {
+  opacity: 1;
+}
+
+.sound-toggle-off {
+  opacity: 0.55;
+}
+
+/* -------------------------------------------------------- virus modal -- */
+/* src/effects/virus-modal.ts. The comic register lives in the drawing
+   (assets/malwaremodal.png), so this only has to get it on screen, wobble
+   it, and take it away again. Nothing here may acquire window chrome, a
+   title bar or system colors — it must never read as a real dialogue. */
+
+.virus-modal {
+  position: fixed;
+  top: 22%;
+  left: 50%;
+  translate: -50% 0;
+  rotate: -2deg;
+  width: min(30rem, 82vw);
+  height: auto;
+  cursor: default;
+  z-index: 50;
+  opacity: 1;
+  scale: 1;
+  animation:
+    virus-pop-in 0.35s ease-out both,
+    virus-wobble 0.9s ease-in-out 0.35s infinite alternate;
+  transition: opacity 0.35s ease, translate 0.35s ease, rotate 0.35s ease, scale 0.35s ease;
+}
+
+.virus-modal.virus-modal-fading {
+  animation: none;
+  opacity: 0;
+  rotate: 8deg;
+  scale: 0.75;
+}
+
+@keyframes virus-pop-in {
+  0% {
+    opacity: 0;
+    scale: 0.7;
+    rotate: -10deg;
+  }
+  100% {
+    opacity: 1;
+    scale: 1;
+    rotate: -2deg;
+  }
+}
+
+@keyframes virus-wobble {
+  0% {
+    rotate: -2deg;
+  }
+  100% {
+    rotate: 2.5deg;
+  }
 }
 
 /* -------------------------------------------------------------- fusion -- */
@@ -559,4 +718,362 @@ body {
 .restored-doll.standing {
   opacity: 1;
   filter: brightness(1);
+}
+
+/* ---------------------------------------------------------------- mice -- */
+/* Fauna. The mouse is pointer-events: none like every other thing in the
+   room — src/mice/mice.ts hit-tests it per-pixel against the current leg
+   frame, so a click on the gap between its legs falls through to the game.
+   And no cursor tell, here least of all: a mouse you can find by hovering is
+   not a mouse you found.
+
+   The gait's timings are NOT here. The left/top/width/opacity transitions are
+   set inline from MOUSE_FRAME_MS and MOUSE_FADE_MS in house.constants.ts, so
+   the frame rate and the step distance live in one place and swapping in real
+   four-frame art stays a two-number change. */
+
+.house-mouse {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0;
+  transform-origin: 50% 100%;
+}
+
+.house-mouse.out {
+  opacity: 1;
+}
+
+.house-mouse.nibbling {
+  animation: nibble 0.22s ease-in-out infinite;
+}
+
+@keyframes nibble {
+  0%,
+  100% {
+    rotate: 0deg;
+  }
+  50% {
+    rotate: -3deg;
+  }
+}
+
+.house-mouse.startled {
+  animation: startle 0.32s ease-out;
+}
+
+@keyframes startle {
+  0% {
+    scale: 1 1;
+  }
+  35% {
+    scale: 1.12 0.88;
+  }
+  100% {
+    scale: 1 1;
+  }
+}
+
+/* The ask: an almond, drawn in a bubble over the mouse's head, shown only
+   while the player is carrying one and only until the first trade — see the
+   long note at the foot of src/mice/mice.ts. */
+.mouse-thought {
+  position: absolute;
+  transform: translate(-50%, -115%);
+  padding: 0.25rem;
+  border: 1px solid var(--warm-black);
+  border-radius: 50%;
+  background: var(--parchment);
+  box-shadow: 0.08rem 0.08rem 0 rgba(58, 43, 30, 0.35);
+  pointer-events: none;
+  animation: thought-in 0.5s ease both;
+}
+
+.mouse-thought::after {
+  content: '';
+  position: absolute;
+  left: 40%;
+  bottom: -0.32rem;
+  width: 0.3rem;
+  height: 0.3rem;
+  border: 1px solid var(--warm-black);
+  border-radius: 50%;
+  background: var(--parchment);
+}
+
+.mouse-thought img {
+  display: block;
+  width: 100%;
+}
+
+@keyframes thought-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -95%) scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -115%) scale(1);
+  }
+}
+
+/* The fragment reveal: the card's title comes apart into letters that drift
+   up off the mouse, one per character, staggered — the text-particle effect
+   notes.md asks for, in the same register as .fairy-spark and .music-note. */
+.fragment-particle {
+  position: fixed;
+  font-size: 1rem;
+  font-style: italic;
+  color: var(--parchment);
+  text-shadow: 0 0 0.5rem rgba(20, 14, 9, 0.9), 0 0 0.9rem rgba(20, 14, 9, 0.7);
+  pointer-events: none;
+  white-space: pre;
+  animation: fragment-rise 2.2s ease-out both;
+}
+
+@keyframes fragment-rise {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 0.5rem) scale(0.7);
+  }
+  20% {
+    opacity: 1;
+    transform: translate(-50%, -0.4rem) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -3.4rem) scale(1.05);
+  }
+}
+
+/* src/rooms/map.ts — the placeholder map: a list of room links until the
+   drawn map with keyholes exists. No cursor tell here either; the entries
+   are plainly buttons and read as such without one. */
+
+#house-map {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.4rem;
+  background: var(--parchment);
+  color: var(--warm-black);
+  font-family: 'EB Garamond', Georgia, serif;
+}
+
+#house-map h1 {
+  margin: 0;
+  font-size: 1.6rem;
+  font-weight: normal;
+  font-style: italic;
+  letter-spacing: 0.04em;
+}
+
+#house-map ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  min-width: min(26rem, 82vw);
+}
+
+#house-map li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.5rem;
+  border-bottom: 1px solid var(--faded-ink);
+  padding-bottom: 0.35rem;
+}
+
+.map-room {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 1.15rem;
+  color: inherit;
+  cursor: default;
+  text-align: left;
+}
+
+button.map-room:hover,
+button.map-room:focus-visible {
+  font-style: italic;
+}
+
+/* A room whose key you do not have. Rendered as a span, not a disabled
+   button — there is nothing to press. */
+.map-room-shut {
+  color: var(--faded-ink);
+}
+
+.map-note {
+  font-size: 0.8rem;
+  color: var(--faded-ink);
+  white-space: nowrap;
+}
+
+/* The way back to the map from inside a room. */
+#to-the-map {
+  margin-top: 0.9rem;
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 0.85rem;
+  font-style: italic;
+  color: inherit;
+  opacity: 0.65;
+  cursor: default;
+}
+
+#to-the-map:hover,
+#to-the-map:focus-visible {
+  opacity: 1;
+}
+
+/* The last pass counts rather than names — see renderList(). */
+#the-mess {
+  font-style: italic;
+}
+
+/* src/rooms/key-board.ts — sixteen hooks, filled and unfilled, hung under the
+   map. One of them stays empty however thoroughly the house is cleaned: key-13
+   is found in Jennie's room in /in/, not here. */
+
+#key-board {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.key-hooks {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 0.35rem 0.5rem;
+  min-width: min(26rem, 82vw);
+}
+
+.key-hook {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.6rem;
+}
+
+.key-hook img {
+  max-width: 100%;
+  max-height: 100%;
+  /* An empty hook is a nail: present, but not the thing you are looking at. */
+  opacity: 0.3;
+}
+
+.key-hook-filled img {
+  opacity: 1;
+}
+
+.key-board-count {
+  font-size: 0.8rem;
+  color: var(--faded-ink);
+}
+
+@media (max-width: 640px) {
+  .key-hooks {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ------------------------------------------------------- scene transition -- */
+/* src/transitions/collage.ts. Deliberately NOT part of the '.house' class:
+   enterRoom() and showMap() both tear down every '.house' element as the
+   first thing they do, and this overlay has to keep covering the screen
+   while that teardown-and-rebuild happens underneath it — being swept away
+   in the same pass would defeat the whole point. It removes itself, on its
+   own timeline, from collage.ts. z-index sits above everything else in the
+   game (the fusion and paper overlays are 10, the sound toggle is 20) so it
+   reliably covers whichever of those happens to be on screen when a scene
+   changes. No cursor tell needed to click through it — it fills the
+   viewport, so there is nothing under it a hover could give away. */
+.scene-transition {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  overflow: hidden;
+  background: var(--warm-black);
+  opacity: 0;
+  cursor: default;
+  transition: opacity 0.4s ease;
+}
+
+.scene-transition.visible {
+  opacity: 1;
+}
+
+/* The fossil's register, drifting. Position and rotation are set per-element
+   from collage.ts (left/top/--drift-rotate); duration and delay too, so
+   prefers-reduced-motion can shorten and de-stagger them without a second
+   code path. Not centered, not a list — text can and does overlap text. */
+.transition-fragment {
+  position: absolute;
+  max-width: 20rem;
+  padding: 0 0.4rem;
+  font-style: italic;
+  font-size: clamp(0.85rem, 1.6vw, 1.15rem);
+  line-height: 1.4;
+  color: var(--parchment);
+  text-align: center;
+  opacity: 0;
+  animation-name: fragment-drift;
+  animation-timing-function: ease-in-out;
+  animation-fill-mode: both;
+}
+
+@keyframes fragment-drift {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(var(--drift-rotate, 0deg)) translateY(0.8rem)
+      scale(0.96);
+  }
+  18% {
+    opacity: 0.85;
+  }
+  50% {
+    opacity: 0.85;
+    transform: translate(-50%, -50%) rotate(var(--drift-rotate, 0deg)) translateY(-0.5rem)
+      scale(1);
+  }
+  85% {
+    opacity: 0.65;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(var(--drift-rotate, 0deg)) translateY(-1.6rem)
+      scale(1.03);
+  }
+}
+
+/* prefers-reduced-motion: no drift, just a static hold — see
+   playTransition() in collage.ts, which also shortens the timing. */
+.transition-fragment.reduced-motion {
+  animation-name: fragment-hold;
+  animation-timing-function: ease;
+  transform: translate(-50%, -50%);
+}
+
+@keyframes fragment-hold {
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 0.85;
+  }
+  100% {
+    opacity: 0.85;
+  }
 }

@@ -20,7 +20,7 @@ find-and-replace through room definitions.
 - [x] **Paper click → poem modal — done, 2026-08-12.** Clicking a paper opens a centered modal card with the poem's title/body, closable via an × button or by clicking outside the card; blocks room clicks while open (same `cutscenePlaying` flag as the fusion cutscene). Verified both close paths work.
 - [x] **Real audio for dinosaur roar and music box — done, 2026-08-12**, once Nora added `roar.mp3` / `musicBox.mp3`. Visual flourishes (shake, floating note glyphs) kept alongside the sound rather than replaced.
 - [ ] Mouse mechanic: running animation, accepts almond → drops correct scrap, scrap shown via text-particle effect (biggest single unbuilt piece; see `CLAUDE.md` Known Debt #1)
-- [ ] Key → unlock correct room (`KeySpec.roomId` now exists and is populated; still needs the actual gating logic plus a real room-to-room flow, replacing the current dev cycle-through) — placement is done, this is the remaining half
+- [x] **Key → unlock correct room — done, 2026-08-22.** `src/rooms/gates.ts` holds the rules; `map.ts` derives the gate table from the placed `KeySpec`s, so placing a key is now the only step in adding a lock. The graph turned out to be a chain with one entrance — `/in/` (key-13) → broom closet → {master bathroom, spare room} → {children's room, balcony} — so every room that exists is reachable and nothing is orphaned. Ten keys open rooms that don't exist yet; `gates.unbuilt()` names them so nobody "fixes" them. Two flags: `keyGating` (default true) and `frontDoor` (default `'broom-closet'`, the one room that opens without a key so a player who has never opened `/in/` is invited rather than locked out — set to `null` to make the house genuinely entered through Jennie's room). The sixteen-hook key board hangs under the map and reads the shared union, so one hook stays empty until `/in/` grants key-13.
 - [ ] "Almonds are for feeding mice" needs to read clearly to a first-time player — thought bubble on the mouse? On the almond? (small UX task, not just code)
 
 ### C. Resolved 2026-08-12
@@ -40,10 +40,10 @@ find-and-replace through room definitions.
 ### E. Bigger and explicitly deferred past today unless you want to open it
 - [ ] Lune-writing prompt on `scrap` (balcony) objects — design TBD
 - [ ] Compiling player-written lunes into a 13-page zine — explicitly "definitely E," further out than the prompt itself
-- [ ] Code the map (once drawn/designed)
+- [x] **Code the map — done as a placeholder** (`src/rooms/map.ts`): a list of rooms with their remaining mess and their locks, plus the key board. The drawn map with keyholes replaces the rendering; `roomsForMap()` is the shape it hangs on.
 - [ ] Text-based rooms (engine-level: does the fossil just have a book, or a real text-room engine?) — lower priority per scope decision, "if time"
-- [ ] Persistence + cross-room/cross-session inventory (`CLAUDE.md` Known Debt #3) — needed before "fusions/collectibles across rooms" is real
-- [ ] `/in/` ↔ `house/` connection (`CLAUDE.md` Known Debt #7) — the single biggest architectural gap, wants its own design conversation before code
+- [x] **Persistence + cross-room/cross-session inventory — done.** See `doc-house-state.md`; the migration checklist there is complete as of 2026-08-22, including cross-room fusion and object-position persistence.
+- [ ] `/in/` ↔ `house/` connection (`CLAUDE.md` Known Debt #7) — **the house side is built and waiting**: `grantKeys()`, `grantDolls()`, `readSharedKeys()`, `readSharedDolls()`, `readSharedDollParts()`, contract in `doc-house-state.md` under "The `/in/` handoff". Nora is writing the `/in/` side.
 
 ---
 

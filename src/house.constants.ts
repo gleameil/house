@@ -22,7 +22,13 @@ import key14 from 'url:../assets/key14.png';
 import key15 from 'url:../assets/key15.png';
 import key16 from 'url:../assets/key16.png';
 
+// Four leg positions for the scurry cycler, all 246x79 on a shared baseline.
+// The original single mouse drawing is frame one; see MOUSE_FRAMES at the foot
+// of this file.
 import mouse from 'url:../assets/mouse.png';
+import mouse2 from 'url:../assets/mouse2.png';
+import mouse3 from 'url:../assets/mouse3.png';
+import mouse4 from 'url:../assets/mouse4.png';
 import paper from 'url:../assets/paper.png';
 import heart from 'url:../assets/heart.png';
 import roarSound from 'url:../assets/roar.mp3';
@@ -77,6 +83,13 @@ import lightbulb from 'url:../assets/lightbulb.png';
 import magazine from 'url:../assets/magazine.png';
 import notebook from 'url:../assets/notebook.png';
 import brokenPicture from 'url:../assets/picture-escaping-frame.png';
+// The crossfade's two states. 00-CONTRACTS.md calls these
+// painting-broken/painting-restored; those names are wrong for this repo — the
+// object is `broken-picture`. Note the two drawings are NOT the same shape
+// (862x858 escaping the frame, 572x641 whole), so the crossfade preserves the
+// whole picture's own aspect rather than stretching it into the broken one's
+// box — see flourishPicture in house.ts.
+import pictureRestored from 'url:../assets/picture-whole.png';
 import potatoChips from 'url:../assets/potato-chips.png';
 import styleGuide from 'url:../assets/substance-of-style.png';
 import thumbDrive from 'url:../assets/thumb-drive.png';
@@ -185,6 +198,7 @@ export interface KindMeta {
 export const BUNNY_LIVE_IMAGE = bunnyLive;
 export const ROAR_SOUND = roarSound;
 export const MUSIC_BOX_SOUND = musicBoxSound;
+export const PICTURE_RESTORED_IMAGE = pictureRestored;
 
 export const HIDDEN_OBJECT_KINDS =
   { 
@@ -294,6 +308,15 @@ export interface FusionSpec {
   headLanding: { x: number; y: number };
   /** where the restored doll stands afterwards */
   restoredSpot: Spot;
+  /** Whether holding every part is enough to trigger the restoration.
+   *  Defaults to true, which is every doll but one.
+   *
+   *  The Gorilla Prince is the exception: he crosses into /in/ in two pieces
+   *  and is not assembled by the house at all. His fusion is deferred, not
+   *  impossible, and may land at the end of February. Set this false on any
+   *  fusion whose moment is chosen by the story rather than by the player
+   *  happening to hold the pieces. See doc-house-state.md. */
+  fusesOnCompletion?: boolean;
 }
 
 export interface RoomSpec {
@@ -2395,4 +2418,185 @@ const BALCONY: RoomSpec = {
 }; // scribbles, Doris doll
 
 export const COUNTABLE_KINDS: HiddenObjectKind[] = ['key', 'almond', 'scrap', 'paper']
+/** Every key's artwork, by the id the shared inventory uses — hyphenated
+ *  `key-1` … `key-16`, which is the contract /in/ reads (doc-house-state.md,
+ *  "The /in/ handoff"), not the `key1` of the asset filename.
+ *
+ *  All sixteen are here, including key-13, which has no KeySpec because it is
+ *  found in Jennie's room in /in/ and never in the house. The hook board has
+ *  to be able to draw it once /in/ grants it. */
+export const KEY_ART: Record<string, string> = {
+  'key-1': key1, 'key-2': key2, 'key-3': key3, 'key-4': key4,
+  'key-5': key5, 'key-6': key6, 'key-7': key7, 'key-8': key8,
+  'key-9': key9, 'key-10': key10, 'key-11': key11, 'key-12': key12,
+  'key-13': key13, 'key-14': key14, 'key-15': key15, 'key-16': key16,
+};
+
+/** The order the hooks hang in, and the whole set the board counts against. */
+export const ALL_KEY_IDS = Object.keys(KEY_ART);
+
+/** An empty hook. The nail is already an object in the broom closet; the key
+ *  board reuses its art rather than drawing a second one. */
+export const HOOK_ART = nail;
+
 export const ROOMS = [BROOM_CLOSET, MASTER_BATHROOM, SPARE_ROOM, BALCONY, CHILDRENS_BEDROOM];
+
+// ------------------------------------------------------------------ mice ---
+//
+// Fauna, not hidden objects: a mouse is never findable, never listed, never
+// tidied away. MouseSpec is declared with the other models above; everything
+// below is the DATA the mechanic needs. The behaviour lives in src/mice/.
+// See notes.md ("Almond text") and CLAUDE.md Known Debt #1.
+
+/** The four leg positions, cycled while a mouse is moving. Real drawn frames
+ *  as of "assets round one" — all 246x79 on a shared baseline, so the cycler
+ *  reads as motion rather than as a jitter. At the size a mouse renders,
+ *  a sense of motion is the whole ambition. Frame rate and step distance are
+ *  MOUSE_FRAME_MS and MOUSE_STEP below; one frame is one step. */
+export const MOUSE_FRAMES: string[] = [mouse, mouse2, mouse3, mouse4];
+
+/** The drawing faces LEFT — head at the left edge, tail at the right. The
+ *  renderer mirrors the sprite when a mouse travels the other way, so if
+ *  replacement art faces the other direction, flip this and nothing else. */
+export const MOUSE_ART_FACES: 'left' | 'right' = 'left';
+
+/** ms per leg frame. One leg frame is also one step of MOUSE_STEP: legs and
+ *  distance are deliberately coupled, so a real gait is tuned by changing
+ *  these two numbers and nothing else (the contract asks for exactly this). */
+export const MOUSE_FRAME_MS = 90;
+
+/** How far a mouse travels per leg frame, as a fraction of the room's WIDTH.
+ *  Vertical movement is divided by the room's aspect ratio before stepping,
+ *  so a mouse crossing the room diagonally does not appear to sprint. */
+export const MOUSE_STEP = 0.006;
+
+/** Inclusive ms range a mouse loiters at a haunt before moving on. */
+export const MOUSE_DWELL_MS: [number, number] = [700, 2400];
+
+/** Inclusive ms range a mouse stays down its hole between outings. */
+export const MOUSE_HIDDEN_MS: [number, number] = [3500, 11000];
+
+/** Inclusive range of haunts visited in one outing before going home. */
+export const MOUSE_HAUNTS_PER_OUTING: [number, number] = [2, 4];
+
+/** ms the mouse takes to fade in out of the hole / fade out into it. */
+export const MOUSE_FADE_MS = 260;
+
+/** A mouse at its hole is drawn this much smaller than at its first haunt —
+ *  it reads as half in the wall rather than parked on the baseboard. */
+export const MOUSE_HOLE_WIDTH_SCALE = 0.7;
+
+/** ms the mouse spends nibbling an accepted almond before it bolts home. */
+export const MOUSE_NIBBLE_MS = 900;
+
+/** A startled mouse (clicked with nothing to give it) runs home this much
+ *  faster than it strolls. */
+export const MOUSE_STARTLE_SPEED = 2.2;
+
+/** The almond drawing used inside the thought bubble — the same art the
+ *  player has been picking up off the floor, so the ask is legible without
+ *  a word of UI text. */
+export const MOUSE_THOUGHT_IMAGE = almond1;
+
+/** Mice by room id. Not a field on RoomSpec: keeping it a side table means
+ *  the mouse lane never edits a room literal, and adding mice to a room is a
+ *  data-only change here.
+ *
+ *  Coordinates are the same fraction space as Spot — centre of the sprite as
+ *  a fraction of room width/height. Haunt widths carry the perspective; the
+ *  renderer interpolates width between haunts, so a mouse coming towards the
+ *  viewer grows. Placement is eyeballed against the actual backgrounds and is
+ *  meant to be nudged: these are the two rooms where almonds are thickest
+ *  (16 in the master bathroom, 2 in the broom closet).
+ *
+ *  Rooms without an entry simply have no mice, which is the balcony's
+ *  permanent condition — nothing out there wants an almond. */
+export const MICE: Record<string, MouseSpec[]> = {
+  'master-bathroom': [
+    {
+      id: 'bathroom-mouse',
+      // the dark seam where the tiled floor meets the shadowed wall
+      hole: { x: 0.355, y: 0.47 },
+      haunts: [
+        { x: 0.255, y: 0.55, width: 0.045 },
+        { x: 0.115, y: 0.70, width: 0.055 },
+        { x: 0.33, y: 0.83, width: 0.065 },
+        { x: 0.50, y: 0.93, width: 0.075 },
+      ],
+    },
+  ],
+  'broom-closet': [
+    {
+      id: 'closet-mouse',
+      // the foot of the dark door jamb, where the floor runs off frame
+      hole: { x: 0.335, y: 0.965 },
+      haunts: [
+        { x: 0.46, y: 0.94, width: 0.05 },
+        { x: 0.60, y: 0.97, width: 0.055 },
+        { x: 0.24, y: 0.98, width: 0.058 },
+      ],
+    },
+  ],
+};
+
+// ------------------------------------------- almonds → art fragments ------
+//
+// PLACEHOLDER DATA, per the placeholder policy at the top of notes.md. The
+// almonds CSV (almond id → This Thing card) has not landed in the repo; when
+// it does, these two tables are the only things that change. Nothing else in
+// the game reads the mapping, and no spec literal has to be touched: the
+// resolver in src/mice/mice.ts prefers an AlmondSpec.scrap authored on the
+// object itself and falls back to ALMOND_SCRAPS, so the CSV can land in
+// either shape without a find-and-replace through the room definitions.
+//
+// The grouping below is what makes the composite fragment id do any work:
+// several almonds point at the SAME card, and a card is only whole once every
+// one of its pieces has been traded for. Art-fragment ids are
+// `${cardId}#${pieceIndex}` (see doc-house-state.md); the piece index is
+// assigned at trade time, not here, so the order a player feeds mice in is
+// the order the card fills up.
+
+/** almond id → the This Thing card that almond buys a piece of. */
+export const ALMOND_SCRAPS: Record<string, { cardId: string; pieces: number }> = {
+  'almond-1': { cardId: 'this-thing-01', pieces: 3 },
+  'almond-2': { cardId: 'this-thing-01', pieces: 3 },
+  'almond-3': { cardId: 'this-thing-01', pieces: 3 },
+  'almond-4': { cardId: 'this-thing-02', pieces: 3 },
+  'almond-5': { cardId: 'this-thing-02', pieces: 3 },
+  'almond-6': { cardId: 'this-thing-02', pieces: 3 },
+  'almond-7': { cardId: 'this-thing-03', pieces: 3 },
+  'almond-8': { cardId: 'this-thing-03', pieces: 3 },
+  'almond-9': { cardId: 'this-thing-03', pieces: 3 },
+  'almond-10': { cardId: 'this-thing-04', pieces: 3 },
+  'almond-11': { cardId: 'this-thing-04', pieces: 3 },
+  'almond-12': { cardId: 'this-thing-04', pieces: 3 },
+  'almond-13': { cardId: 'this-thing-05', pieces: 3 },
+  'almond-14': { cardId: 'this-thing-05', pieces: 3 },
+  'almond-15': { cardId: 'this-thing-05', pieces: 3 },
+  'almond-16': { cardId: 'this-thing-06', pieces: 3 },
+  'almond-17': { cardId: 'this-thing-06', pieces: 3 },
+  'almond-18': { cardId: 'this-thing-06', pieces: 3 },
+  'almond-19': { cardId: 'this-thing-07', pieces: 3 },
+  'almond-20': { cardId: 'this-thing-07', pieces: 3 },
+  'almond-21': { cardId: 'this-thing-07', pieces: 3 },
+  'almond-22': { cardId: 'this-thing-08', pieces: 2 },
+  'almond-23': { cardId: 'this-thing-08', pieces: 2 },
+};
+
+/** card id → what the text-particle reveal spells out when a piece of it is
+ *  handed over. Placeholder titles; the real ones come from the same CSV. */
+export const THIS_THING_CARDS: Record<string, { title: string }> = {
+  'this-thing-01': { title: '[This Thing — card 1]' },
+  'this-thing-02': { title: '[This Thing — card 2]' },
+  'this-thing-03': { title: '[This Thing — card 3]' },
+  'this-thing-04': { title: '[This Thing — card 4]' },
+  'this-thing-05': { title: '[This Thing — card 5]' },
+  'this-thing-06': { title: '[This Thing — card 6]' },
+  'this-thing-07': { title: '[This Thing — card 7]' },
+  'this-thing-08': { title: '[This Thing — card 8]' },
+};
+
+/** Shown instead of a card title when a fragment is handed over for a card
+ *  nobody has written yet — the same register as FOUND_MESSAGE_PLACEHOLDER
+ *  in house.ts. */
+export const FRAGMENT_TITLE_PLACEHOLDER = '[a fragment not yet drawn]';

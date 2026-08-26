@@ -1,8 +1,10 @@
 # `/house/` State
 
-**Files:** `src/state/state.constants.ts`, `src/state/store.ts`, `src/state/inventory.ts`, `src/state/state.selftest.ts`
+**Files:** `src/state/` (`state.constants.ts`, `store.ts`, `inventory.ts`), and the pure modules that read it — `src/rooms/requests.ts`, `gates.ts`, `placement.ts`, `key-board.ts`, `map.ts`. Each has a `*.selftest.ts` beside it.
 
-**Status:** designed and built, **wired into nothing**. `house.ts` is untouched; the game behaves exactly as it did this morning. The migration checklist at the end is the thing to execute.
+**Status:** **fully migrated.** Every step of the checklist at the end has landed, along with key gating, the hook board and the transition collage. What remains is not on this list: the `/in/` side of the handoff (Nora), and the drawn map that replaces the placeholder.
+
+**Scene changes go through `playTransition()`** (`src/transitions/collage.ts`) via the `goToRoom()` / `goToMap()` wrappers in `house.ts` — those two are the only player-reachable callers of `enterRoom()` and `showMap()`, and anything new that changes scenes should join them rather than calling through.
 
 ---
 
@@ -20,7 +22,7 @@ The briefs were written without access to the repo. Where they disagree, the cod
 
 **1. Five of the six dolls can never be assembled, today.** Six objects carry `partOf` — `ragged-body`, `ragged-head`, `gorilla-body`, `plus-size-body`, `curly-body`, `evil-body` — but exactly one `FusionSpec` exists in the whole game (`ragged`, children's bedroom). The other four bodies point at fusions that don't exist. Worse, their heads are in *other rooms*: `evil-head` in the master bathroom, `plus-size-head` and `gorilla-leg` in the broom closet, `curly-head` in the spare room — and those heads have no `partOf` at all, so they read as ordinary named objects.
 
-Two consequences in the current build. `buildList()` skips anything with `partOf`, so those four bodies are findable but never appear in the to-find list. And `fusionFor()` looks only in `state.room!.fusions` while `fusionParts()` filters only `state.objects` — both are current-room-only, so cross-room fusion is not merely unbuilt, it is unrepresentable. This is squarely a state problem: a doll can only be assembled once "which parts do I have" outlives the room you found them in. `Inventory.dollParts` is where that lives. **I have not touched it** — dolls are out of scope for this lane — but nothing else in the migration will fix it by accident, so it needs its own slot on the list.
+Two consequences in the current build. `buildList()` skips anything with `partOf`, so those four bodies are findable but never appear in the to-find list. And `fusionFor()` looks only in `state.room!.fusions` while `fusionParts()` filters only `state.objects` — both are current-room-only, so cross-room fusion is not merely unbuilt, it is unrepresentable. This is squarely a state problem: a doll can only be assembled once "which parts do I have" outlives the room you found them in. `Inventory.dollParts` is where that lives, and it now crosses to `/in/` on its own key (see "The gorilla" below). **I have not built the fusion itself** — dolls are out of scope for this lane — but nothing else in the migration will fix it by accident, so it needs its own slot on the list.
 
 **2. The balcony has zero requestable objects.** It is 28 `scrap`s and nothing else. The request pool is exactly the set `buildList()` already computes — `named` objects without `partOf` — so:
 
@@ -86,7 +88,20 @@ The contract's shape, with two revisions, both documented in the source:
 
 **`artFragments` ids are composite.** `AlmondSpec.scrap` is `{ cardId, pieces }` — one *This Thing* card is several fragments — so a bare cardId can't address a single fragment. Ids are `` `${cardId}#${pieceIndex}` ``.
 
-`collect(slot, id)` is the one writer. It is idempotent — finding the same object twice, or reloading mid-animation, must never produce "keys — 17 of 16" — and it mirrors `dolls` and `keys` into the shared arrays by union. Note that **`dolls` is not derivable from `dollParts`**: the Gorilla Prince is canonically never redeemed, so his body and leg sit in `dollParts` forever and no `gorilla` doll is ever written. `/in/` must not infer one from the other.
+`collect(slot, id)` is the one writer. It is idempotent — finding the same object twice, or reloading mid-animation, must never produce "keys — 17 of 16" — and it mirrors `dolls`, `dollParts` and `keys` into the shared arrays by union.
+
+### The gorilla, and why parts and dolls are two lists
+
+**`dolls` is not derivable from `dollParts`, in either direction.** This is the one place the data model has to carry a story decision, so it's worth stating plainly.
+
+Every other doll fuses the moment its parts meet. The Gorilla Prince crosses into `/in/` **in two pieces** and stays that way for the whole house — his fusion is *deferred, not impossible*, and may land at the end of February. So holding every part of a doll must not imply the doll. And `/in/` may write a doll the house never assembled, so the doll must not imply the house.
+
+Two things follow, and the second is the one that will bite:
+
+- `dollParts` gets its own handoff key, `evernost:shared:dollParts`, read by `/in/` independently. Sharing only finished dolls would have left the gorilla with no way across at all.
+- **Part-completeness cannot stay the fusion trigger.** `find()` currently runs `runFusion()` the instant `parts.every(p => p.found)`. The gorilla would fuse on the spot, in the wrong room, in the wrong month. Whatever wires fusion to persistent state needs the trigger separable from the predicate — a `fusesOnCompletion: boolean` on `FusionSpec`, default `true`, `false` for the gorilla, is the smallest version. Migration step 4 is where this has to be handled; it is not optional there.
+
+One incidental note. `FusionSpec` is typed `partIds: [string, string]` with "head last" and a `headLanding` — the gorilla is missing a **leg**, where every other doll is missing a head. Structurally the animation doesn't care, but the field names will read as wrong when someone gets there. Worth a rename to `landing` when the gorilla's fusion is actually built.
 
 ---
 
@@ -154,14 +169,17 @@ Defaults follow the brief: persist positions, no gating. Note that persist-posit
 
 ## The `/in/` handoff
 
-`/in/` reads two keys and nothing else. It should never parse an `Inventory`; the shared arrays are deliberately the smaller, dumber surface.
+`/in/` reads three keys and nothing else. It should never parse an `Inventory`; the shared arrays are deliberately the smaller, dumber surface.
 
 ```ts
-readSharedDolls(): string[]   // evernost:shared:dolls — dolls made whole
-readSharedKeys():  string[]   // evernost:shared:keys  — key ids held
+readSharedDolls():     string[]   // evernost:shared:dolls     — dolls made whole
+readSharedDollParts(): string[]   // evernost:shared:dollParts — pieces carried, whole or not
+readSharedKeys():      string[]   // evernost:shared:keys      — key ids held
 ```
 
-**What `/in/` may assume:** both are arrays of strings, or absent. Ids are stable and match the house's own object ids (`ragged`, `curly`, …; `key1`…`key16`).
+**Dolls and parts must be read independently.** The gorilla is in the second list and never the first. Anything in `/in/` that asks "do I have the gorilla" is asking about `dollParts`.
+
+**What `/in/` may assume:** all three are arrays of strings, or absent. Ids are stable and match the house's own object ids exactly as authored — **`key-1`…`key-16`, hyphenated**, not `key1`. (`key-13` never appears from the house's side: it is found in Jennie's room, and `/in/` grants it.) Dolls are `ragged`, `curly`, `plus-size`, `evil`, `gorilla`; parts are `curly-head`, `gorilla-leg`, and so on.
 
 **What `/in/` must tolerate, all as ordinary cases and none as errors:**
 
@@ -173,7 +191,7 @@ readSharedKeys():  string[]   // evernost:shared:keys  — key ids held
 
 **Both readers are total.** Absence, corruption, wrong types and unknown ids all resolve to a plain array. There is no path from "the player never opened the house" to an error.
 
-**The array is shared, not owned.** key13 is found in `/in/`, so `/in/` calls `grantKeys(['key13'])` and the house's own key finds union into the same array. Every cross-site array write goes through `unionIntoShared()` — never `writeShared` with a whole array. This corrects `00-CONTRACTS.md` §1, which lists `evernost:shared:keys` as house-owned; it should read *house + in, append-only*.
+**The arrays are shared, not owned.** key13 is found in `/in/`, so `/in/` calls `grantKeys(['key13'])` and the house's own key finds union into the same array. `evernost:shared:dolls` is the same shape of thing in the other direction: if `/in/` heals the gorilla at the end of the month, it calls `grantDolls(['gorilla'])` and writes a doll the house never assembled. Every cross-site array write goes through `unionIntoShared()` — never `writeShared` with a whole array. This corrects `00-CONTRACTS.md` §1, which lists both as house-owned; both should read *house + in, append-only*.
 
 `/in/` must never write `evernost:house:*`. The house must never write `/in/`'s unprefixed legacy keys.
 
@@ -202,14 +220,78 @@ Ordered. Each step is independently shippable and leaves a working game. **The o
 
 **3. Move found-state into `RoomState`.** `enterRoom` calls `recordVisit(room.id)` and marks objects found from `readRoomState(...).found`; `find()` calls `recordFound(room.id, obj.spec.id)`. `state.objects[].found` becomes a cache of persisted truth rather than the truth. *Must follow 2.* This is the first step a player can see, and the first that can lose data — do it alone, in its own commit.
 
-**4. Move `fusionsDone` into `Inventory.dolls`,** via `collect('dolls', f.id)` in `restoreDoll()`, and record parts with `collect('dollParts', id)` in `find()`. *Must follow 3* — `restoreDoll` fires off the back of found parts, so if found-state isn't persistent yet the doll un-assembles on reload while its parts stay found.
+**4. Move `fusionsDone` into `Inventory.dolls`,** via `collect('dolls', f.id)` in `restoreDoll()`, and record parts with `collect('dollParts', id)` in `find()`. *Must follow 3* — `restoreDoll` fires off the back of found parts, so if found-state isn't persistent yet the doll un-assembles on reload while its parts stay found. **Add `fusesOnCompletion` to `FusionSpec` in the same commit** (default `true`, `false` for the gorilla). Once parts persist across rooms, the existing `parts.every(p => p.found)` trigger will fire for every doll whose pieces have met — including the one that is supposed to wait until the end of February.
 
-**5. Route the counters through inventory.** `updateCounter()` currently counts `state.objects` — this room, this session. Moving it to `countOf(slot)` changes the semantics to cumulative-across-rooms, which is the intent but is a visible change to what the numbers mean. *Must follow 3 and 4* or every counter reads zero.
+**5. Route the counters through inventory.** Split in two, because only half of it is mechanical.
 
-**6. Replace the auto-advance in `updateList()`.** It currently calls `enterRoom(ROOMS[i+1])` cyclically on `allFound()`, and it does so in the same tick it reveals the "Nothing here is abandoned now" banner — so the banner has never actually been seen. This is the one step that *removes* behaviour, so it goes late, and **not before a real room-to-room flow exists** — otherwise you clear a room and nothing happens, and the game is unplayable. Pair it with the same commit that introduces the exit, whatever that turns out to be (map, key gate, or just a door).
+*Done:* `find()` now calls `collect()` for every repeating kind — keys, almonds, papers (carried as their poem id), scraps — so the inventory fills as you play. This is what the mouse lane needs in order to have almonds to spend.
 
-**7. Position persistence behind the flag.** `assignSpots()` reads `RoomState.spots` when `persistObjectPositions` is true, and `recordSpots()` writes them on first assignment. *Must follow 3*, same record. Expect this one to look like a bug the first time you see it — the room stops re-shuffling.
+*Not done, and it's a design call rather than a migration step:* `updateCounter()` still counts `state.objects`, i.e. **this room, this session**. Switching it to `countOf(slot)` would make the panel read "keys — 7 of 16" for the whole house instead of "keys — 2 of 5" for the room you're standing in. Both are defensible and they say different things. Nora's call; it is one line either way.
 
-**8. Requests and final-pass mode.** The loop specified above, replacing the to-find list with the three-at-a-time panel plus the mess counter. *Must follow 3 and 6* — the request pool is read from `RoomState`, and while the auto-advance is still in place you'd be teleported out before a second visit could ever happen, so the anti-repeat ledger would never be exercised.
+**6. ~~Replace the auto-advance in `updateList()`.~~ Done.** Finishing a room now returns you to the map (`src/rooms/map.ts`) instead of teleporting you to `ROOMS[i+1]`, and every room carries a way back to the map at any time. The map is also the front door — `openTheHouse()` opens it rather than dropping into a room. It is the placeholder the asset contract describes: a list of room links, each showing how much of that room is still a mess. **Not gated** — `KeySpec.roomId` is populated but no key unlocks anything yet, and gating belongs in `map.ts` when it comes.
 
-**Out of scope for this lane and untouched:** keys and the map, almonds and mice, dolls, the zine and IndexedDB, lunes, every scene file, every special effect. Cross-room fusion (finding 1 above) is the one item that has no home on this list yet and needs one.
+*Original note:* It currently calls `enterRoom(ROOMS[i+1])` cyclically on `allFound()`, and it does so in the same tick it reveals the "Nothing here is abandoned now" banner — so the banner has never actually been seen. This is the one step that *removes* behaviour, so it goes late, and **not before a real room-to-room flow exists** — otherwise you clear a room and nothing happens, and the game is unplayable. Pair it with the same commit that introduces the exit, whatever that turns out to be (map, key gate, or just a door).
+
+**7. ~~Position persistence behind the flag.~~ Done.** `assignSpots()` reads `RoomState.spots` when `persistObjectPositions` is true and writes them back; the two rules with judgement in them live in `src/rooms/placement.ts` with 13 assertions. Expect it to look like a bug the first time you see it — the room stops re-shuffling.
+
+Three things worth knowing before changing it. **A stored spot is only reused if the room still authors it** — move an object's spots in `house.constants.ts` and a player's stored position is stale, and honouring it silently would make the edit look like it did nothing, which reads as broken code rather than as an old save. **Spots compare by value**, because the stored copy came back through JSON and is a different object from the authored one. And **the balcony's scraps are carved out**: they are authored to blow around, `reshuffleScraps()` moves them on every click, so pinning them would fight the room's character. The carve-out lives in exactly one place.
+
+**With this, the checklist is complete.**
+
+**8. ~~Requests and final-pass mode.~~ Done.** `src/rooms/requests.ts` holds the pure selection logic with 26 assertions; `renderList()` in `house.ts` renders the two modes. The panel shows the few things the room has asked for, or — in the last pass — `the mess — x of y` and no names at all. Fusion lines and the kind-counters show in both modes.
+
+*Original note:* The loop specified above, replacing the to-find list with the three-at-a-time panel plus the mess counter. *Must follow 3 and 6* — the request pool is read from `RoomState`, and while the auto-advance is still in place you'd be teleported out before a second visit could ever happen, so the anti-repeat ledger would never be exercised.
+
+### Cross-room fusion — built
+
+**A doll comes together where the dollhouse is.** You find `curly-head` in the spare room and nothing happens; you carry it back to the children's bedroom, and the doll is made whole there. Confirmed as the intent, and it falls out of the data for free: a `FusionSpec` belongs to a room, and `restoredSpot` is already authored in that room's coordinates.
+
+Three pieces make it work:
+
+- `fusionReady()` asks `Inventory.dollParts`, not the room. Asking the room was the original bug — three of the four dolls keep their head in a different room from their body, so "is everything I can see found?" was vacuously true for a body on its own.
+- `OBJECT_IMAGES` maps every object id to its artwork across *all* rooms, because the cutscene has to draw a head that may have been found three rooms ago and is not in `state.objects`. A fusion naming a part no room contains now warns and stands down instead of dereferencing it.
+- `runReadyFusions(room)` runs on room entry as well as on find — carrying the last piece home is itself the trigger — and bails if the player has already left, so a cutscene can't stage itself into a room that is no longer on screen.
+
+The piece counter in the panel now counts carried parts too, so a doll reads "1 of 2 pieces" while its head is in your pocket rather than pretending you have nothing.
+
+### The key hook board — built
+
+The panel counters stay **per-room**: "keys — 2 of 5" is about the room you are standing in.
+
+The whole-house view is `src/rooms/key-board.ts`, hung under the map: **16 hooks**, filled and unfilled, the unfilled ones standing for keys not yet found, drawn with the `nail` asset already in `assets/`.
+
+It reads `readSharedKeys()` — the shared union, **not** the house's own finds — because the house only contains **fifteen** of the sixteen. `key-13` is found in Jennie's room in `/in/`, which grants it through `grantKeys()`. So one hook stays empty no matter how thoroughly the house is cleaned. That is the first place the `/in/` handoff becomes visible to a player rather than to the code, and it is the point of it.
+
+---
+
+## Key gating
+
+**The key graph is a chain with exactly one entrance,** read off `key_message-opens-asset-foundIn.csv` and confirmed against the placed `KeySpec`s:
+
+```
+/in/  --key-13-->  broom closet  --key-12-->  master bathroom
+                                 --key-8 -->  spare room
+                                                --key-2 --> children's room
+                                                --key-14--> balcony
+```
+
+Every room that exists is reachable, nothing is orphaned, and no room needs a key found behind itself. That is authored, not lucky — the CSV's "Found in" column is a dependency graph. The other ten placed keys open rooms that do not exist yet; `gates.unbuilt()` names them so nobody later "fixes" them.
+
+The rules live in `src/rooms/gates.ts`, pure and self-tested (19 assertions). `map.ts` derives the gate table from the placed `KeySpec`s, so **placing a key is the only step in adding a lock**, and adds `EXTERNAL_GATES` for `key-13`, which has no `KeySpec` at all because it is never found in the house.
+
+Two more flags in `HOUSE_CONFIG`, and the second is a real open decision:
+
+| | Default | Meaning |
+|---|---|---|
+| `keyGating` | `true` | a room opens only once the player holds a key that names it |
+| `frontDoor` | `'broom-closet'` | the one room that opens without a key |
+
+`frontDoor` is the "graceful absence" policy applied where a player can see it: someone who has never opened `/in/` is invited in rather than locked out. **Setting it to `null` makes the house genuinely entered through Jennie's room** — one word, and a decision about whether the house is playable standalone. Nora's call.
+
+To exercise the chain before `/in/` grants anything, write the array the handoff describes:
+
+```js
+localStorage.setItem('evernost:shared:keys', JSON.stringify(['key-13','key-12','key-8']))
+```
+
+**Out of scope for this lane and untouched:** the map, key gating, mice, the zine and IndexedDB, lunes, every scene file, every special effect.

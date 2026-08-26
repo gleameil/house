@@ -31,11 +31,42 @@ import {
   BUNNY_LIVE_IMAGE,
   ROAR_SOUND,
   MUSIC_BOX_SOUND,
+  PICTURE_RESTORED_IMAGE,
   POEM_CONTENT,
 } from './house.constants';
 import { renderMarkdown } from './markdown';
+import { initSoundToggle } from './effects/sound-toggle';
+import { startWindAmbience, stopWindAmbience } from './effects/wind';
+import { showVirusModal } from './effects/virus-modal';
+import { showMap } from './rooms/map';
+import {
+  chooseRequests,
+  isFinalPass,
+  messProgress,
+  roundSatisfied,
+} from './rooms/requests';
+import { playTransition, nextMirrorFragment } from './transitions/collage';
+import { mountMice } from './mice/mice';
+import { ensureSchema } from './state/store';
+import {
+  collect,
+  freezeMessTotal,
+  readInventory,
+  readRoomState,
+  recordFound,
+  recordRequested,
+  recordSpots,
+  recordVisit,
+} from './state/inventory';
+import { InventorySlot, StoredSpot } from './state/state.constants';
+import { rememberedSpot, sameSpot } from './rooms/placement';
+import { EMPTY_ROOM_STATE, HOUSE_CONFIG, RoomState } from './state/state.constants';
 
 const FOUND_MESSAGE_PLACEHOLDER = '[a message not yet written]';
+/** how long "Nothing here is abandoned now." stays up before the room changes */
+const ROOM_COMPLETE_PAUSE_MS = 1800;
+/** beat between a room appearing and a doll it can now assemble coming together */
+const FUSION_ON_ENTRY_DELAY_MS = 1200;
 const POEM_PLACEHOLDER = { title: '(untitled)', body: 'No poem has been placed here yet.' };
 
 interface LiveObject {
@@ -48,13 +79,42 @@ interface LiveObject {
   found: boolean;
 }
 
+/** False when ensureSchema() reported 'future' — the stored state was written
+ *  by a NEWER build than this one. The three sites deploy independently, so an
+ *  older /house/ can meet state written by a newer /in/. We read nothing and
+ *  write nothing in that case rather than trampling a save we don't understand.
+ *  See the schema table in doc-house-state.md. */
+let persistence = true;
+
 const state = {
   room: null as RoomSpec | null,
+  /** Bumped by goToRoom/goToMap the moment a scene change is requested, before
+   *  the transition even starts. Anything that schedules work against "am I
+   *  still where I was?" captures this and compares — `state.room` cannot
+   *  answer that question, because it holds the room you were in until the
+   *  next one finishes mounting, which is long after you asked to leave. */
+  scene: 0,
   objects: [] as LiveObject[],
   container: null as HTMLDivElement | null,
   fusionsDone: new Set<string>(),
+  /** Inventory.dollParts, cached for the current room. Doll pieces are the one
+   *  kind of object a room has to know about without containing. */
+  dollParts: new Set<string>(),
   cutscenePlaying: false,
+  /** ids this visit has been asked for, in the order they were asked. Empty in
+   *  final-pass mode, when the room stops naming things and just counts. */
+  requestedNow: [] as string[],
+  /** rounds of three issued so far this visit */
+  roundsThisVisit: 0,
+  finalPass: false,
 };
+
+/** Every object's artwork, addressed by id across ALL rooms. A fusion needs to
+ *  draw a head that may have been found three rooms ago and is not in
+ *  state.objects, so it cannot look the image up from what is on screen. */
+const OBJECT_IMAGES = new Map<string, string>(
+  ROOMS.flatMap((room) => room.objects.map((spec) => [spec.id, spec.image] as const)),
+);
 
 // ---------------------------------------------------------------- alpha ---
 
@@ -161,6 +221,18 @@ function randomSpot(avoid?: { x: number; y: number }): Spot {
 function assignSpots(room: RoomSpec): Map<string, Spot> {
   const assigned = new Map<string, Spot>();
 
+  // HOUSE_CONFIG.persistObjectPositions — an object sits where it sat last
+  // visit, rather than the room re-rolling on every entry. Expect this to look
+  // like a bug the first time you see it: the room stops re-shuffling.
+  //
+  // Deliberately NOT applied to the 'random' strategy, which today is only the
+  // balcony's scraps. Those are authored to blow around — reshuffleScraps()
+  // moves them on every click — so pinning them would fight the room's whole
+  // character. If that carve-out ever stops being right, this is the only
+  // place it lives.
+  const remembering = persistence && HOUSE_CONFIG.persistObjectPositions;
+  const stored = remembering ? (readRoomState(room.id).spots ?? {}) : {};
+
   const sharedPoolKinds = new Set<HiddenObjectKind>();
   for (const spec of room.objects) {
     if (HIDDEN_OBJECT_KINDS[spec.kind].placementStrategy === 'sharedSpotList') {
@@ -177,8 +249,23 @@ function assignSpots(room: RoomSpec): Map<string, Spot> {
           `"${kind}" but only ${pool.length} shared spots for them.`,
       );
     }
-    const pick = shuffled(pool);
-    objectsOfKind.forEach((spec, i) => assigned.set(spec.id, pick[i]));
+    // Hand back remembered spots first, then deal the rest of the pool out
+    // among whoever is left. Taking the remembered ones out of circulation is
+    // what stops a newly-added object landing on top of one — the case that
+    // arises the moment a room gains an object after a player has visited it.
+    const taken: Spot[] = [];
+    const unplaced: typeof objectsOfKind = [];
+    for (const spec of objectsOfKind) {
+      const spot = rememberedSpot(stored, spec.id, pool);
+      if (spot && !taken.some((t) => sameSpot(t, spot))) {
+        assigned.set(spec.id, spot);
+        taken.push(spot);
+      } else {
+        unplaced.push(spec);
+      }
+    }
+    const free = shuffled(pool.filter((spot) => !taken.some((t) => sameSpot(t, spot))));
+    unplaced.forEach((spec, i) => assigned.set(spec.id, free[i]));
   }
 
   for (const spec of room.objects) {
@@ -186,10 +273,24 @@ function assignSpots(room: RoomSpec): Map<string, Spot> {
     const strategy = HIDDEN_OBJECT_KINDS[spec.kind].placementStrategy;
     if (strategy === 'individualSpotLists') {
       const spots = (spec as NamedSpec).spots;
-      assigned.set(spec.id, spots[Math.floor(Math.random() * spots.length)]);
+      const spot = rememberedSpot(stored, spec.id, spots);
+      assigned.set(spec.id, spot ?? spots[Math.floor(Math.random() * spots.length)]);
     } else {
       assigned.set(spec.id, randomSpot());
     }
+  }
+
+  if (remembering) {
+    const toStore: Record<string, StoredSpot> = {};
+    for (const [id, spot] of assigned) {
+      // Scraps are omitted on purpose — see the carve-out above.
+      const strategy = HIDDEN_OBJECT_KINDS[
+        room.objects.find((o) => o.id === id)!.kind
+      ].placementStrategy;
+      if (strategy === 'random') continue;
+      toStore[id] = { x: spot.x, y: spot.y, width: spot.width, rotation: spot.rotation };
+    }
+    recordSpots(room.id, toStore);
   }
 
   return assigned;
@@ -310,8 +411,24 @@ function fusionFor(obj: LiveObject): FusionSpec | undefined {
   return state.room!.fusions.find((f) => f.id === (obj.spec as NamedSpec).partOf);
 }
 
-function fusionParts(f: FusionSpec): LiveObject[] {
-  return state.objects.filter((o) => (o.spec as NamedSpec).partOf === f.id);
+/** A fusion may only run when every part it DECLARES is in the player's hands,
+ *  and when this is the room that owns the fusion.
+ *
+ *  Both halves matter. Asking the ROOM which parts are found was the old bug:
+ *  three of the four dolls keep their head in a different room from their
+ *  body, so "is everything I can see found?" was vacuously true for a body on
+ *  its own, and runFusion() then dereferenced a head that wasn't there.
+ *  Asking the INVENTORY fixes that and finally lets a doll be assembled from
+ *  pieces gathered across the house.
+ *
+ *  The room half is the design decision: a doll comes together where the
+ *  dollhouse is. You find the head in the spare room and nothing happens; you
+ *  carry it back to the children's bedroom, and the doll is made whole there.
+ *  This falls out of the data for free, because a FusionSpec belongs to a room
+ *  and its restoredSpot is authored in that room's coordinates. */
+function fusionReady(f: FusionSpec): boolean {
+  if (f.fusesOnCompletion === false) return false;
+  return f.partIds.every((id) => state.dollParts.has(id));
 }
 
 function allFound(): boolean {
@@ -342,32 +459,133 @@ function updateCounter(kind: HiddenObjectKind) {
   }
 }
 
+/** Whether an object gets its own line in the to-find panel.
+ *
+ *  A doll part is normally listed under its fusion instead of by name — but
+ *  only in the room that OWNS that fusion. Three of the four heads, and the
+ *  gorilla's body, sit in rooms that own no fusion of theirs, so skipping
+ *  every part unconditionally left them listed nowhere at all: no name to
+ *  hunt for, no fusion line, no acknowledgement they existed. Since
+ *  allFound() still counted them, four of the five rooms could not be
+ *  completed and the player was stuck in whichever one they reached first.
+ *
+ *  The gorilla is the permanent case rather than an oversight: he has no
+ *  FusionSpec anywhere, on purpose, so his pieces are always listed by name. */
+function isListedByName(spec: AnyHiddenObjectSpec, room: RoomSpec): boolean {
+  if (spec.kind !== 'named') return false;
+  const partOf = (spec as NamedSpec).partOf;
+  if (!partOf) return true;
+  return !room.fusions.some((f) => f.id === partOf);
+}
+
+
+/** The room's persisted state, or an in-memory stand-in when persistence is
+ *  off (a save written by a newer build — see openTheHouse). The stand-in
+ *  covers this visit only, which is the best a read-only session can do, but
+ *  it keeps the request loop and the mess counter working rather than freezing
+ *  them at zero. */
+function currentRoomState(room: RoomSpec): RoomState {
+  if (persistence) return readRoomState(room.id);
+  return {
+    ...EMPTY_ROOM_STATE,
+    found: state.objects.filter((o) => o.found).map((o) => o.spec.id),
+    requested: [...state.requestedNow],
+  };
+}
+
+/** The objects this room can name at the player: exactly the ones that get
+ *  their own line in the panel. A doll part listed under its fusion is not
+ *  asked for individually — the fusion is the thing being sought. */
+function requestPool(room: RoomSpec): string[] {
+  return room.objects.filter((spec) => isListedByName(spec, room)).map((spec) => spec.id);
+}
+
+/** Ask for the next few things, or discover there is nothing left to ask for
+ *  and settle into the last pass. Returns nothing; the panel reads state. */
+function issueRound(room: RoomSpec): void {
+  const roomState = currentRoomState(room);
+  const pool = requestPool(room);
+
+  if (isFinalPass(pool, roomState)) {
+    state.finalPass = true;
+    state.requestedNow = [];
+    const loose = room.objects.filter((o) => !roomState.found.includes(o.id)).length;
+    if (persistence) freezeMessTotal(room.id, loose);
+    return;
+  }
+
+  state.finalPass = false;
+  state.requestedNow = chooseRequests(pool, roomState, HOUSE_CONFIG.requestsPerRound);
+  state.roundsThisVisit += 1;
+  if (persistence && state.requestedNow.length > 0) {
+    recordRequested(room.id, state.requestedNow);
+  }
+}
+
 function updateList(): void {
-  for (const obj of state.objects) {
-    if (obj.spec.kind !== 'named' || obj.spec.partOf) continue;
-    const li = document.getElementById(`to-find-${obj.spec.id}`);
-    if (li) li.classList.toggle('found', obj.found);
+  const room = state.room;
+  if (!room) return;
+
+  // A satisfied round either hands out another few names or, if this visit has
+  // had its share, leaves the player to wander off via the map in their own
+  // time. Nothing ejects them: being thrown out of a room you were enjoying is
+  // worse than being allowed to linger in one you have finished with.
+  if (!state.finalPass && roundSatisfied(state.requestedNow, currentRoomState(room))) {
+    if (state.roundsThisVisit < HOUSE_CONFIG.roundsPerVisit) issueRound(room);
+    else state.requestedNow = [];
   }
-  for (const f of state.room!.fusions) {
-    const li = document.getElementById(`to-find-fusion-${f.id}`);
-    if (!li) continue;
-    const parts = fusionParts(f);
-    const foundCount = parts.filter((p) => p.found).length;
-    if (state.fusionsDone.has(f.id)) {
-      li.textContent = f.name;
-      li.classList.add('found');
-    } else {
-      li.textContent = `${f.name} — ${foundCount} of ${parts.length} pieces`;
-      li.classList.remove('found');
-    }
-  }
-  COUNTABLE_KINDS.forEach((k) => updateCounter(k))
-  
+
+  renderList();
+
   if (allFound()) {
     const banner = document.getElementById('all-found');
     if (banner) banner.classList.add('visible');
-    enterRoom(ROOMS[(ROOMS.indexOf(state.room ?? ROOMS[ROOMS.length - 1]) + 1) % ROOMS.length])
   }
+}
+
+/** The single seam every scene change in the game passes through
+ *  (E-transition-collage.md). enterRoom() and showMap() are the two things
+ *  that ever mount a scene; these two wrappers are the only callers of
+ *  either that a player action reaches, everywhere in this file and in
+ *  map.ts (which gets goToRoom handed to it as its onChoose callback, below
+ *  and in openTheHouse()). playTransition() covers the screen with the
+ *  drifting collage, calls the wrapped function while covered, and fades
+ *  back in on whatever it built — see collage.ts for the timing and the
+ *  skip behaviour. Fire-and-forget: nothing here needs to wait on a scene
+ *  change finishing to keep running. */
+function goToRoom(room: RoomSpec): void {
+  state.scene++;
+  void playTransition(() => enterRoom(room));
+}
+
+function goToMap(): void {
+  state.scene++;
+  void playTransition(() => showMap(goToRoom));
+}
+
+/** A room is finished. Show the banner long enough to read, then return to the
+ *  map — the player chooses where to go next.
+ *
+ *  This replaces the cyclic enterRoom(ROOMS[i+1]) that used to fire from
+ *  updateList(), which was a dev convenience rather than navigation
+ *  (CLAUDE.md, Known Debt #2). It also has to fire only off the back of an
+ *  ACTION that completed the room, never off the back of merely rendering it:
+ *  updateList() runs on every entry, so once found-state persisted, advancing
+ *  from there meant walking into a cleared room and being bounced straight out
+ *  of it — with every room cleared, an infinite tour.
+ *
+ *  The pause happens first, banner visible and uncovered; the transition
+ *  collage begins only after it, on the goToMap() call below — "banner ->
+ *  hold -> fade -> collage -> next scene", per the brief. */
+function maybeAdvance(): void {
+  if (!allFound()) return;
+  // The way back to the map stays live during this pause — deliberately, the
+  // player is allowed to walk out on their own. If they do, this must not fire
+  // as well, or they get a second, pointless transition from the map to itself.
+  const scene = state.scene;
+  window.setTimeout(() => {
+    if (state.scene === scene && state.room && allFound()) goToMap();
+  }, ROOM_COMPLETE_PAUSE_MS);
 }
 
 // ----------------------------------------------------------- flourishes --
@@ -388,6 +606,8 @@ const FLOURISHES: Record<string, (obj: LiveObject) => number> = {
   fairy: flourishFairy,
   'music-box': flourishMusicBox,
   mirror: flourishMirror,
+  'broken-picture': flourishPicture,
+  'thumb-drive': flourishVirus,
 };
 
 function flourishBunny(obj: LiveObject): number {
@@ -444,16 +664,111 @@ function flourishMusicBox(obj: LiveObject): number {
   return 1400;
 }
 
-function flourishMirror(): number {
+/** The mirror's white flash, and — new here — one line briefly revealed
+ *  inside it. Jenny's register, not the fossil's: see the register-split
+ *  comment atop transitions/collage.ts for why the mirror draws from its own
+ *  separate pool rather than the one the scene transitions use. One fragment
+ *  at a time, cycling in order (nextMirrorFragment), so a player who clicks
+ *  the mirror repeatedly gets a legible sequence instead of noise. */
+function flourishMirror(obj: LiveObject): number {
   const flash = document.createElement('div');
   flash.className = 'house mirror-flash';
   state.container!.appendChild(flash);
   flash.addEventListener('animationend', () => flash.remove());
+
+  const rect = layoutRect(obj);
+  const text = document.createElement('div');
+  text.className = 'house mirror-flash-text';
+  text.textContent = nextMirrorFragment();
+  text.style.left = `${rect.cx}px`;
+  text.style.top = `${rect.cy}px`;
+  document.body.appendChild(text);
+  text.addEventListener('animationend', () => text.remove());
+
   return 700;
+}
+
+/** Crossfades the broken picture to its restored self and back, without
+ *  touching obj.element (which is about to run the ordinary found-fade).
+ *  A second image is laid directly over it at the same rect and rotation,
+ *  faded in then out via one keyframe animation — a true two-image
+ *  crossfade rather than an instant src swap. Until real restored art
+ *  lands, PICTURE_RESTORED_IMAGE is a duplicate of the broken art, so this
+ *  plays as a no-op flicker; see house.constants.ts. */
+/** The sketchy thumb drive does what a sketchy thumb drive does. Returns 0:
+ *  the popup is its own full-screen event that the player dismisses, so there
+ *  is no reason to hold the thumb drive's find-fade behind it. */
+function flourishVirus(): number {
+  showVirusModal();
+  return 0;
+}
+
+function flourishPicture(obj: LiveObject): number {
+  const rect = layoutRect(obj);
+  const overlay = document.createElement('img');
+  overlay.src = PICTURE_RESTORED_IMAGE;
+  overlay.alt = '';
+  overlay.className = 'house picture-crossfade';
+  // The two drawings are not the same shape — the broken one is nearly square
+  // because the picture is escaping its frame, the whole one is taller than it
+  // is wide. Matching the broken art's box exactly would squash the restored
+  // picture, so it takes the same width and centre and keeps its own height
+  // (left to CSS as `height: auto`). Rotation has to be composed with the
+  // centring translate rather than replacing it.
+  const spin = obj.spot.rotation ? ` rotate(${obj.spot.rotation}deg)` : '';
+  overlay.style.left = `${rect.left}px`;
+  overlay.style.top = `${rect.cy}px`;
+  overlay.style.width = `${rect.width}px`;
+  overlay.style.transform = `translateY(-50%)${spin}`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('animationend', () => overlay.remove());
+  return 2200;
+}
+
+/** What, if anything, a found object puts in the player's pockets.
+ *
+ *  Named one-offs put nothing there — tidying the plunger away is the whole
+ *  of that transaction. The repeating kinds are the ones that accumulate, and
+ *  a paper is carried as its POEM, not as the ball it was crumpled into.
+ *
+ *  The ids written here are the ids /in/ will match on, so they are the object
+ *  ids exactly as authored: `key-1`…`key-16`, hyphenated. (`key-13` is absent
+ *  from the house on purpose — it is found in Jennie's room in /in/, which
+ *  grants it with grantKeys().) */
+function inventoryEntryFor(
+  spec: AnyHiddenObjectSpec,
+): { slot: InventorySlot; id: string } | null {
+  switch (spec.kind) {
+    case 'key':
+      return { slot: 'keys', id: spec.id };
+    case 'almond':
+      return { slot: 'almonds', id: spec.id };
+    case 'paper':
+      return { slot: 'papers', id: (spec as PaperSpec).poemId };
+    case 'scrap':
+      return { slot: 'scraps', id: spec.id };
+    default:
+      return null;
+  }
 }
 
 function find(obj: LiveObject): void {
   obj.found = true;
+  // Doll pieces are tracked in memory whether or not we are persisting, so a
+  // read-only session can still assemble what it finds within that session.
+  const isDollPart = obj.spec.kind === 'named' && (obj.spec as NamedSpec).partOf;
+  if (isDollPart) state.dollParts.add(obj.spec.id);
+
+  if (persistence) {
+    recordFound(state.room!.id, obj.spec.id);
+    // Doll pieces go into the inventory as well as the room, because they are
+    // the one kind of object whose meaning outlives the room it was found in:
+    // the bodies are in the children's bedroom and three of the four heads are
+    // not. They also cross to /in/ — see doc-house-state.md on the gorilla.
+    if (isDollPart) collect('dollParts', obj.spec.id);
+    const carried = inventoryEntryFor(obj.spec);
+    if (carried) collect(carried.slot, carried.id);
+  }
   const delay = FLOURISHES[obj.spec.id]?.(obj) ?? 0;
 
   window.setTimeout(() => {
@@ -470,12 +785,18 @@ function find(obj: LiveObject): void {
     if (obj.spec.kind === 'paper') openPaperModal(obj);
 
     const f = fusionFor(obj);
-    if (f && !state.fusionsDone.has(f.id)) {
-      const parts = fusionParts(f);
-      if (parts.every((p) => p.found)) {
-        window.setTimeout(() => runFusion(f), 900);
-      }
+    if (f && !state.fusionsDone.has(f.id) && fusionReady(f)) {
+      // Same reasoning as maybeAdvance: 900ms is long enough to leave in, and
+      // runReadyFusions' own `state.room !== room` guard cannot catch it —
+      // state.room still holds this room while the next scene mounts.
+      const scene = state.scene;
+      window.setTimeout(() => {
+        if (state.scene !== scene) return;
+        void runReadyFusions(state.room!);
+      }, 900);
+      return; // the fusion's own completion decides whether the room is done
     }
+    maybeAdvance();
   }, delay);
 }
 
@@ -498,10 +819,21 @@ function onRoomClick(event: MouseEvent): void {
 async function runFusion(f: FusionSpec): Promise<void> {
   state.cutscenePlaying = true;
 
+  const bodySrc = OBJECT_IMAGES.get(f.partIds[0]);
+  const headSrc = OBJECT_IMAGES.get(f.partIds[1]);
+  if (!bodySrc || !headSrc) {
+    // A fusion naming a part no room contains is an authoring error. Say so
+    // and stand down — the last thing that dereferenced a missing part left
+    // cutscenePlaying stuck true and killed the room.
+    console.warn(`[house] fusion "${f.id}" names a part no room contains; skipping`);
+    state.cutscenePlaying = false;
+    return;
+  }
+
   const [assembled, bodyImg, headImg] = await Promise.all([
     loadImage(f.assembled),
-    loadImage(state.objects.find((o) => o.spec.id === f.partIds[0])!.spec.image),
-    loadImage(state.objects.find((o) => o.spec.id === f.partIds[1])!.spec.image),
+    loadImage(bodySrc),
+    loadImage(headSrc),
   ]);
 
   const overlay = document.createElement('div');
@@ -580,7 +912,10 @@ async function runFusion(f: FusionSpec): Promise<void> {
   }, 2500);
 }
 
-function restoreDoll(f: FusionSpec, assembled: HTMLImageElement): void {
+/** Put a whole doll in the room at its authored spot. Used both at the end of
+ *  the fusion cutscene and on re-entering a room where the doll already
+ *  stands — a doll you assembled last visit is still there this visit. */
+function standDoll(f: FusionSpec, assembled: HTMLImageElement): void {
   const doll = document.createElement('img');
   doll.src = assembled.src;
   doll.className = 'restored-doll';
@@ -588,9 +923,56 @@ function restoreDoll(f: FusionSpec, assembled: HTMLImageElement): void {
   placeAtSpot(doll, f.restoredSpot, assembled.naturalWidth, assembled.naturalHeight);
   state.container!.appendChild(doll);
   requestAnimationFrame(() => doll.classList.add('standing'));
+}
+
+/** Run any fusion this room owns whose parts are all in hand. Sequential and
+ *  guarded, because two cutscenes at once would fight over the overlay. Called
+ *  on entering a room — carrying the last piece home is itself the trigger —
+ *  and after finding a piece in the room that owns the fusion. */
+async function runReadyFusions(room: RoomSpec): Promise<boolean> {
+  // Call sites are delayed, so the player may have left in the meantime; a
+  // cutscene staged into a room that is no longer on screen would place its
+  // doll against the wrong geometry.
+  if (state.room !== room) return false;
+  for (const f of room.fusions) {
+    if (state.cutscenePlaying) return false;
+    if (state.fusionsDone.has(f.id)) continue;
+    if (!fusionReady(f)) continue;
+    await runFusion(f);
+    // One at a time: runFusion hands control to the player, and restoreDoll
+    // comes back here when they dismiss it, so a backlog drains one cutscene
+    // per click instead of stacking overlays.
+    return true;
+  }
+  return false;
+}
+
+function restoreDoll(f: FusionSpec, assembled: HTMLImageElement): void {
+  standDoll(f, assembled);
   state.fusionsDone.add(f.id);
+  if (persistence) collect('dolls', f.id);
   state.cutscenePlaying = false;
   updateList();
+  // Another doll may have been ready all along and waiting its turn. Only
+  // consider the room finished once nothing else wants to come together.
+  const room = state.room!;
+  void runReadyFusions(room).then((ran) => {
+    if (!ran) maybeAdvance();
+  });
+}
+
+/** Re-seat dolls assembled on an earlier visit. Deliberately fire-and-forget:
+ *  a doll that fails to load is a doll that is missing from the corner of a
+ *  room, not a reason to fail entering it. */
+async function standRestoredDolls(room: RoomSpec): Promise<void> {
+  for (const f of room.fusions) {
+    if (!state.fusionsDone.has(f.id)) continue;
+    try {
+      standDoll(f, await loadImage(f.assembled));
+    } catch {
+      /* the doll simply isn't there */
+    }
+  }
 }
 
 // ---------------------------------------------------------------- build ---
@@ -599,46 +981,103 @@ function buildList(room: RoomSpec): HTMLElement {
   const panel = document.createElement('aside');
   panel.className = 'house';
   panel.id = 'to-find';
+
   const heading = document.createElement('h1');
   heading.textContent = room.name;
   panel.appendChild(heading);
+
+  // Filled by renderList() on every change, because what belongs in it depends
+  // on whether the room is still naming things or has settled into its last
+  // pass — and that can flip mid-visit, the moment the last nameable object
+  // is asked for.
   const ul = document.createElement('ul');
-
-  // Named objects and fusions share one alphabetised list, sorted by the
-  // name actually shown to the player (article stripped, case-insensitive)
-  // rather than by declaration order — see house-briefs/B-bugfix-batch.md.
-  const entries: { key: string; li: HTMLLIElement }[] = [];
-  for (const spec of room.objects) {
-    if (spec.kind !== 'named' || spec.partOf) continue;
-    const name = (spec as NamedSpec).name;
-    const li = document.createElement('li');
-    li.id = `to-find-${spec.id}`;
-    li.textContent = name;
-    entries.push({ key: sortKey(name), li });
-  }
-  for (const f of room.fusions) {
-    const li = document.createElement('li');
-    li.id = `to-find-fusion-${f.id}`;
-    entries.push({ key: sortKey(f.name), li });
-  }
-  entries.sort((a, b) => a.key.localeCompare(b.key));
-  for (const { li } of entries) ul.appendChild(li);
-
-  const counters = COUNTABLE_KINDS.map((k) => ({ key: kindLabel(k).toLowerCase(), kind: k }));
-  counters.sort((a, b) => a.key.localeCompare(b.key));
-  for (const { kind } of counters) {
-    const counterForKind = document.createElement('li');
-    counterForKind.id = `${kind}-count`;
-    ul.appendChild(counterForKind);
-  }
-
+  ul.id = 'to-find-list';
   panel.appendChild(ul);
 
   const banner = document.createElement('div');
   banner.id = 'all-found';
   banner.textContent = 'Nothing here is abandoned now.';
   panel.appendChild(banner);
+
+  const back = document.createElement('button');
+  back.type = 'button';
+  back.id = 'to-the-map';
+  back.textContent = 'the rest of the house';
+  back.addEventListener('click', () => goToMap());
+  panel.appendChild(back);
+
   return panel;
+}
+
+/** Renders the panel's list. Two modes.
+ *
+ *  While the room is still asking: only the few things it has asked for this
+ *  visit. Not the whole inventory of the room — being handed forty names at
+ *  once is the thing this replaces.
+ *
+ *  In the last pass: no names at all, just the size of what is left. The point
+ *  of the final sweep is that you stop looking for particular objects and
+ *  start tidying, so naming them would work against it.
+ *
+ *  Fusions and the kind-counters show in both modes: a doll being assembled is
+ *  a goal that outlives any one round, and the counters are ambient. */
+function renderList(): void {
+  const ul = document.getElementById('to-find-list');
+  const room = state.room;
+  if (!ul || !room) return;
+  ul.textContent = '';
+
+  const entries: { key: string; li: HTMLLIElement }[] = [];
+
+  if (state.finalPass) {
+    const roomState = currentRoomState(room);
+    const ids = room.objects.map((o) => o.id);
+    const { tidied, total } = messProgress(ids, roomState, roomState.messTotal);
+    const li = document.createElement('li');
+    li.id = 'the-mess';
+    li.textContent = `the mess — ${tidied} of ${total}`;
+    ul.appendChild(li);
+  } else {
+    for (const id of state.requestedNow) {
+      const spec = room.objects.find((o) => o.id === id);
+      if (!spec) continue;
+      const name = (spec as NamedSpec).name;
+      const li = document.createElement('li');
+      li.id = `to-find-${id}`;
+      li.textContent = name;
+      li.classList.toggle('found', state.objects.find((o) => o.spec.id === id)?.found ?? false);
+      entries.push({ key: sortKey(name), li });
+    }
+  }
+
+  for (const f of room.fusions) {
+    const li = document.createElement('li');
+    li.id = `to-find-fusion-${f.id}`;
+    const foundCount = f.partIds.filter((id) => state.dollParts.has(id)).length;
+    if (state.fusionsDone.has(f.id)) {
+      li.textContent = f.name;
+      li.classList.add('found');
+    } else {
+      // partIds.length, not the in-room subset: a doll whose head is three
+      // rooms away still has two pieces.
+      li.textContent = `${f.name} — ${foundCount} of ${f.partIds.length} pieces`;
+    }
+    entries.push({ key: sortKey(f.name), li });
+  }
+
+  // Alphabetised by the name actually shown, article stripped — see
+  // house-briefs/B-bugfix-batch.md.
+  entries.sort((a, b) => a.key.localeCompare(b.key));
+  for (const { li } of entries) ul.appendChild(li);
+
+  const counters = COUNTABLE_KINDS.map((k) => ({ key: kindLabel(k).toLowerCase(), kind: k }));
+  counters.sort((a, b) => a.key.localeCompare(b.key));
+  for (const { kind } of counters) {
+    const li = document.createElement('li');
+    li.id = `${kind}-count`;
+    ul.appendChild(li);
+  }
+  COUNTABLE_KINDS.forEach((k) => updateCounter(k));
 }
 
 export async function enterRoom(room: RoomSpec): Promise<void> {
@@ -647,6 +1086,11 @@ export async function enterRoom(room: RoomSpec): Promise<void> {
     current[0].remove();
   }
   state.room = room;
+  // The wind belongs to the balcony and nowhere else, so it follows the room
+  // rather than the page. The toggle in the corner can silence it.
+  if (room.id === 'balcony') startWindAmbience();
+  else stopWindAmbience();
+
   const container = document.createElement('div');
   container.className = 'house';
   container.id = 'house-room';
@@ -664,6 +1108,26 @@ export async function enterRoom(room: RoomSpec): Promise<void> {
 
   const spots = assignSpots(room);
 
+  // Persisted truth, read once per entry. state.objects[].found is a cache of
+  // this from here on, not the source of it.
+  const roomState = persistence ? recordVisit(room.id) : EMPTY_ROOM_STATE;
+  const alreadyFound = new Set(roomState.found);
+
+  // Dolls live in the inventory, not in the room: Inventory.dolls is the
+  // record of what has been made whole anywhere, and fusionsDone is this
+  // room's view of it.
+  const inventory = persistence ? readInventory() : null;
+  const dolls = new Set(inventory?.dolls ?? []);
+  state.fusionsDone = new Set(room.fusions.filter((f) => dolls.has(f.id)).map((f) => f.id));
+  // Parts persist across rooms; that is the whole point of them.
+  state.dollParts = new Set(inventory?.dollParts ?? []);
+
+  // A visit's requests are per-visit; the ledger of what has ever been asked
+  // for is not, and lives in RoomState.requested.
+  state.requestedNow = [];
+  state.roundsThisVisit = 0;
+  state.finalPass = false;
+
   state.objects = room.objects.map((spec, i) => {
     const img = images[i];
     const element = document.createElement('img');
@@ -679,21 +1143,59 @@ export async function enterRoom(room: RoomSpec): Promise<void> {
       naturalWidth: img.naturalWidth,
       naturalHeight: img.naturalHeight,
       alpha: cacheAlpha(img),
-      found: false,
+      found: alreadyFound.has(spec.id),
     };
+    // Objects tidied on a previous visit are already gone when you walk in —
+    // is-found directly, skipping being-found, so nothing plays its find
+    // animation at you for a second time.
+    if (live.found) element.classList.add('is-found');
     container.appendChild(element);
     return live;
   });
 
   document.body.appendChild(container);
   document.body.appendChild(buildList(room));
+  // initSoundToggle appends for us. The toggle carries the 'house' class, so
+  // it is torn down and rebuilt with everything else on a room change rather
+  // than needing a lifecycle of its own.
+  initSoundToggle();
 
   sizeRoomToViewport();
   for (const obj of state.objects)
     placeAtSpot(obj.element, obj.spot, obj.naturalWidth, obj.naturalHeight);
   window.addEventListener('resize', sizeRoomToViewport);
   container.addEventListener('click', onRoomClick);
-  updateList();
+  void mountMice(container, room);
+  void standRestoredDolls(room);
+  issueRound(room);
+  renderList();
+  // Walking in holding the last piece is itself the trigger. Delayed so the
+  // room is on screen before the cutscene takes it away again.
+  window.setTimeout(() => void runReadyFusions(room), FUSION_ON_ENTRY_DELAY_MS);
 }
-// Choices at present: CHILDRENS_BEDROOM, MASTER_BATHROOM, BROOM_CLOSET, SPARE_ROOM, BALCONY, LADY_BATHROOM, MASTER_BEDROOM
-enterRoom(ROOMS[0]);
+/** Boot. ensureSchema() runs before anything reads or writes state, so a
+ *  stale save is dealt with once, up front, rather than half-read. */
+function openTheHouse(): void {
+  const outcome = ensureSchema();
+  if (outcome === 'future') {
+    persistence = false;
+    console.log(
+      'This browser is holding house state written by a newer version of ' +
+        'Evernost than this one. Nothing will be saved this visit, and ' +
+        'nothing already saved will be disturbed.',
+    );
+  }
+  if (outcome === 'wiped') {
+    console.log('The house has been rebuilt since you were last here. Starting over.');
+  }
+  // The map is the front door now. Shown directly, not through goToMap() —
+  // there is no prior scene on screen yet for the collage to fade from, only
+  // a blank page, so a transition here would just be a delay with nothing to
+  // ease between. Choosing a room from this first map view still goes
+  // through the collage, via goToRoom. To jump straight into a room while
+  // working on it, call enterRoom(ROOMS[n]) here instead — the old dev
+  // convenience, kept deliberately.
+  showMap(goToRoom);
+}
+
+openTheHouse();

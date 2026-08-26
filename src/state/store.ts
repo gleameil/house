@@ -119,6 +119,16 @@ function devSharedBackend(real: StorageBackend, fixture: StorageBackend): Storag
  *  enough for /in/ to have something to render, not a full playthrough. */
 export const DEV_FIXTURE: Record<string, string> = {
   [STORAGE_KEYS.sharedDolls]: JSON.stringify(['ragged', 'curly']),
+  // the gorilla deliberately appears as parts and never as a doll — a dev
+  // build of /in/ should exercise the two-pieces case, not just the whole one
+  [STORAGE_KEYS.sharedDollParts]: JSON.stringify([
+    'ragged-body',
+    'ragged-head',
+    'curly-body',
+    'curly-head',
+    'gorilla-body',
+    'gorilla-leg',
+  ]),
   [STORAGE_KEYS.sharedKeys]: JSON.stringify(['key1', 'key4', 'key9']),
   [STORAGE_KEYS.sound]: JSON.stringify('on'),
 };
